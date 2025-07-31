@@ -8,8 +8,6 @@ defmodule AshChart.Renderer.CLITest do
 
   doctest CLI
 
-  doctest AshChart
-
   describe inspect(&AshChart.render/1) do
     @tag :tmp_dir
     test "renders a chart", %{tmp_dir: tmp_dir} do

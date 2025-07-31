@@ -1,14 +1,17 @@
 defmodule AshChart.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :ash_chart,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
-      deps: deps()
+      deps: deps(),
+      docs: &docs/0
     ]
   end
 
@@ -34,6 +37,18 @@ defmodule AshChart.MixProject do
       {:picosat_elixir, "~> 0.2.3", only: [:dev, :test]},
       {:req, "~> 0.5.15", optional: true},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      source_ref: "v#{@version}",
+      extras: ["README.md"],
+      groups_for_modules: [
+        "ER Chart": ~r/AshChart\.EntityRelationship(\..*)?$/,
+        Renderers: ~r/AshChart\.Renderer(\..*)?$/
+      ]
     ]
   end
 end

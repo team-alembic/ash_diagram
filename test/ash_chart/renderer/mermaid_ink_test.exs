@@ -8,8 +8,6 @@ defmodule AshChart.Renderer.MermaidInkTest do
 
   doctest MermaidInk
 
-  doctest AshChart
-
   describe inspect(&MermaidInk.render/2) do
     @tag :tmp_dir
     test "renders a chart", %{tmp_dir: tmp_dir} do

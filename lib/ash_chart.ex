@@ -11,7 +11,7 @@ defmodule AshChart do
   @typedoc "See `t:t/1`."
   @type t() :: t(module())
   @typedoc "Chart struct where the Struct Module is the implementation module."
-  @type t(implementation) :: %{__struct__: implementation}
+  @type t(implementation) :: %{required(:__struct__) => implementation, optional(atom()) => any()}
 
   @doc """
   Compose the Mermaid chart from the given `chart` data structure.
