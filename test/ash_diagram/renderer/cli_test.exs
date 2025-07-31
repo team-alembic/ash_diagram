@@ -1,16 +1,16 @@
-defmodule AshChart.Renderer.CLITest do
+defmodule AshDiagram.Renderer.CLITest do
   use ExUnit.Case, async: true
 
-  import AshChart.Fixture
-  import AshChart.VisualAssertions
+  import AshDiagram.Fixture
+  import AshDiagram.VisualAssertions
 
-  alias AshChart.Renderer.CLI
+  alias AshDiagram.Renderer.CLI
 
   doctest CLI
 
-  describe inspect(&AshChart.render/1) do
+  describe inspect(&AshDiagram.render/1) do
     @tag :tmp_dir
-    test "renders a chart", %{tmp_dir: tmp_dir} do
+    test "renders a diagram", %{tmp_dir: tmp_dir} do
       data = read_fixture("flow.mmd")
 
       out = CLI.render(data, format: :png)

@@ -1,15 +1,15 @@
-defmodule AshChart.C4 do
+defmodule AshDiagram.C4 do
   @moduledoc """
   Provides functions to handle Mermaid
   [C4 Diagrams](https://mermaid.js.org/syntax/c4.html).
   """
 
-  @behaviour AshChart
+  @behaviour AshDiagram
 
-  alias AshChart.C4.Boundary
-  alias AshChart.C4.Element
-  alias AshChart.C4.Relationship
-  alias AshChart.C4.RelationshipIndex
+  alias AshDiagram.C4.Boundary
+  alias AshDiagram.C4.Element
+  alias AshDiagram.C4.Relationship
+  alias AshDiagram.C4.RelationshipIndex
 
   @types %{
     c4_context: "C4Context",
@@ -41,7 +41,7 @@ defmodule AshChart.C4 do
   @enforce_keys [:type, :title, :entries]
   defstruct [:type, :title, :entries]
 
-  @impl AshChart
+  @impl AshDiagram
   def compose(%__MODULE__{type: type, title: title, entries: entries} = _diagram) do
     [
       Map.fetch!(@types, type),

@@ -1,7 +1,7 @@
-defmodule AshChart.C4Test do
+defmodule AshDiagram.C4Test do
   use ExUnit.Case, async: true
 
-  alias AshChart.C4
+  alias AshDiagram.C4
 
   describe inspect(&C4.compose/1) do
     test "renders a valid C4 diagram" do
@@ -33,7 +33,7 @@ defmodule AshChart.C4Test do
                Rel("User", "System DB", "Uses", "SQL")
              """
 
-      assert AshChart.render(diagram, format: :svg)
+      assert AshDiagram.render(diagram, format: :svg)
     end
   end
 end

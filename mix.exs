@@ -1,11 +1,11 @@
-defmodule AshChart.MixProject do
+defmodule AshDiagram.MixProject do
   use Mix.Project
 
   @version "0.1.0"
 
   def project do
     [
-      app: :ash_chart,
+      app: :ash_diagram,
       version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
@@ -46,9 +46,9 @@ defmodule AshChart.MixProject do
       source_ref: "v#{@version}",
       extras: ["README.md"],
       groups_for_modules: [
-        "Chart / ER": ~r/AshChart\.EntityRelationship(\..*)?$/,
-        "Chart / C4": ~r/AshChart\.C4(\..*)?$/,
-        Renderers: ~r/AshChart\.Renderer(\..*)?$/
+        "Diagram / ER": ~r/AshDiagram\.EntityRelationship(\..*)?$/,
+        "Diagram / C4": ~r/AshDiagram\.C4(\..*)?$/,
+        Renderers: ~r/AshDiagram\.Renderer(\..*)?$/
       ]
     ]
   end

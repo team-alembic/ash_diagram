@@ -1,4 +1,4 @@
-defmodule AshChart.EntityRelationship.Attribute do
+defmodule AshDiagram.EntityRelationship.Attribute do
   @moduledoc """
   Represents an attribute of an entity in the Entity Relationship Diagram (ERD).
   """

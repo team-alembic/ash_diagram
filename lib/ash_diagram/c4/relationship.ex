@@ -1,9 +1,9 @@
-defmodule AshChart.C4.Relationship do
+defmodule AshDiagram.C4.Relationship do
   @moduledoc """
   Represents a relationship in a C4 diagram.
   """
 
-  alias AshChart.C4
+  alias AshDiagram.C4
 
   @types %{
     rel: "Rel",

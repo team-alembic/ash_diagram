@@ -1,4 +1,4 @@
-defmodule AshChart.VisualAssertions do
+defmodule AshDiagram.VisualAssertions do
   @moduledoc """
   Provides visual assertions for testing image similarity.
   """

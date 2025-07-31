@@ -1,6 +1,6 @@
-defmodule AshChart.Dummy do
+defmodule AshDiagram.Dummy do
   @moduledoc false
-  @behaviour AshChart
+  @behaviour AshDiagram
 
   @type t() :: %__MODULE__{content: iodata()}
 

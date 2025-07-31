@@ -1,4 +1,4 @@
-defmodule AshChart.Fixture do
+defmodule AshDiagram.Fixture do
   @moduledoc """
   Provides functions to read and write fixtures for testing.
   """

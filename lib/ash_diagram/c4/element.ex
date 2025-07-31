@@ -1,9 +1,9 @@
-defmodule AshChart.C4.Element do
+defmodule AshDiagram.C4.Element do
   @moduledoc """
   Represents an element in a C4 diagram.
   """
 
-  alias AshChart.C4
+  alias AshDiagram.C4
 
   @types %{
     person: "Person",

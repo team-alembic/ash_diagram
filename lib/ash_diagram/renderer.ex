@@ -1,9 +1,9 @@
-defmodule AshChart.Renderer do
+defmodule AshDiagram.Renderer do
   @moduledoc """
-  Behaviour for rendering AshChart charts.
+  Behaviour for rendering AshDiagram diagrams.
   """
 
-  @default_renderers [AshChart.Renderer.CLI, AshChart.Renderer.MermaidInk]
+  @default_renderers [AshDiagram.Renderer.CLI, AshDiagram.Renderer.MermaidInk]
 
   @type theme() :: :default | :forest | :dark | :neutral
   @type format() :: :svg | :png | :pdf
@@ -29,21 +29,21 @@ defmodule AshChart.Renderer do
   @callback supported?() :: boolean()
 
   @doc """
-  Render the chart to the specified format.
+  Render the diagram to the specified format.
   """
-  @callback render(chart :: iodata(), options :: options()) :: iodata()
+  @callback render(diagram :: iodata(), options :: options()) :: iodata()
 
   @doc """
-  Render the chart to the specified format, using the configured renderer.
+  Render the diagram to the specified format, using the configured renderer.
   """
-  @spec render(chart :: iodata(), options :: options()) :: iodata()
-  def render(chart, options \\ []) do
-    choose_renderer().render(chart, options)
+  @spec render(diagram :: iodata(), options :: options()) :: iodata()
+  def render(diagram, options \\ []) do
+    choose_renderer().render(diagram, options)
   end
 
   @spec choose_renderer() :: module()
   defp choose_renderer do
-    case Application.fetch_env(:ash_chart, :renderer) do
+    case Application.fetch_env(:ash_diagram, :renderer) do
       {:ok, renderer} when is_atom(renderer) -> renderer
       _ -> detect_supported_renderer()
     end

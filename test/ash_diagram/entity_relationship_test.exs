@@ -1,13 +1,13 @@
-defmodule AshChart.EntityRelationshipTest do
+defmodule AshDiagram.EntityRelationshipTest do
   use ExUnit.Case, async: true
 
-  alias AshChart.EntityRelationship
+  alias AshDiagram.EntityRelationship
 
   doctest EntityRelationship
 
   describe inspect(&EntityRelationship.compose/1) do
-    test "renders basic chart" do
-      chart = %EntityRelationship{
+    test "renders basic diagram" do
+      diagram = %EntityRelationship{
         title: "Order example",
         entries: [
           %EntityRelationship.Relationship{
@@ -31,7 +31,7 @@ defmodule AshChart.EntityRelationshipTest do
         ]
       }
 
-      assert chart |> EntityRelationship.compose() |> IO.iodata_to_binary() ==
+      assert diagram |> EntityRelationship.compose() |> IO.iodata_to_binary() ==
                """
                ---
                title: "Order example"
@@ -42,11 +42,11 @@ defmodule AshChart.EntityRelationshipTest do
                  "CUSTOMER" }|..|{ "DELIVERY-ADDRESS" : "uses"
                """
 
-      assert AshChart.render(chart, format: :svg)
+      assert AshDiagram.render(diagram, format: :svg)
     end
 
     test "renders complex diagram" do
-      chart = %EntityRelationship{
+      diagram = %EntityRelationship{
         entries: [
           %EntityRelationship.Relationship{
             left: {"CUSTOMER", :exactly_one},
@@ -86,7 +86,7 @@ defmodule AshChart.EntityRelationshipTest do
         ]
       }
 
-      assert chart |> EntityRelationship.compose() |> IO.iodata_to_binary() ==
+      assert diagram |> EntityRelationship.compose() |> IO.iodata_to_binary() ==
                """
                erDiagram
                  "CUSTOMER" ||--o{ "ORDER" : "places"
@@ -107,7 +107,7 @@ defmodule AshChart.EntityRelationshipTest do
                  }
                """
 
-      assert AshChart.render(chart, format: :svg)
+      assert AshDiagram.render(diagram, format: :svg)
     end
   end
 end

@@ -1,9 +1,9 @@
-defmodule AshChart.C4.Boundary do
+defmodule AshDiagram.C4.Boundary do
   @moduledoc """
   Represents a boundary in a C4 diagram.
   """
 
-  alias AshChart.C4
+  alias AshDiagram.C4
 
   @types %{
     boundary: "Boundary",

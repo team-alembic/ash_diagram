@@ -1,9 +1,9 @@
-defmodule AshChart.EntityRelationship.Entity do
+defmodule AshDiagram.EntityRelationship.Entity do
   @moduledoc """
   Represents an entity in the Entity Relationship Diagram (ERD).
   """
 
-  alias AshChart.EntityRelationship.Attribute
+  alias AshDiagram.EntityRelationship.Attribute
 
   @type t() :: %__MODULE__{
           id: iodata(),

@@ -1,9 +1,9 @@
-defmodule AshChart.C4.RelationshipIndex do
+defmodule AshDiagram.C4.RelationshipIndex do
   @moduledoc """
   Represents a relationship index in a C4 diagram.
   """
 
-  alias AshChart.C4
+  alias AshDiagram.C4
 
   @type t() :: %__MODULE__{
           index: non_neg_integer(),

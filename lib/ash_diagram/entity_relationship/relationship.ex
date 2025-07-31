@@ -1,4 +1,4 @@
-defmodule AshChart.EntityRelationship.Relationship do
+defmodule AshDiagram.EntityRelationship.Relationship do
   @moduledoc """
   Represents a relationship between two entities in the Entity Relationship
   Diagram (ERD).

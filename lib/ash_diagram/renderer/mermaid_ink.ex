@@ -1,5 +1,5 @@
 with {:module, Req} <- Code.ensure_compiled(Req) do
-  defmodule AshChart.Renderer.MermaidInk do
+  defmodule AshDiagram.Renderer.MermaidInk do
     @moduledoc """
     Renderer for Mermaid diagrams using [mermaid.ink](https://mermaid.ink) web
     service.
@@ -19,16 +19,16 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
     >   requests.
     """
 
-    @behaviour AshChart.Renderer
+    @behaviour AshDiagram.Renderer
 
     @doc false
-    @impl AshChart.Renderer
+    @impl AshDiagram.Renderer
     def supported?, do: true
 
     @doc false
-    @impl AshChart.Renderer
-    def render(chart, options) do
-      uri = URI.new!("https://mermaid.ink/img/#{encode(chart)}")
+    @impl AshDiagram.Renderer
+    def render(diagram, options) do
+      uri = URI.new!("https://mermaid.ink/img/#{encode(diagram)}")
 
       uri =
         case Keyword.get(options, :format, :jpeg) do
@@ -54,9 +54,9 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
       body
     end
 
-    @spec encode(chart :: iodata()) :: String.t()
-    defp encode(chart) do
-      json = JSON.encode!(%{code: IO.iodata_to_binary(chart)})
+    @spec encode(diagram :: iodata()) :: String.t()
+    defp encode(diagram) do
+      json = JSON.encode!(%{code: IO.iodata_to_binary(diagram)})
 
       z = :zlib.open()
       :ok = :zlib.deflateInit(z, :best_compression)
@@ -75,7 +75,7 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
 
     @spec passthrough_options(
             uri :: URI.t(),
-            options :: AshChart.Renderer.options(),
+            options :: AshDiagram.Renderer.options(),
             option :: atom()
           ) :: URI.t()
     defp passthrough_options(uri, options, option) do

@@ -1,16 +1,16 @@
-defmodule AshChart.Renderer.MermaidInkTest do
+defmodule AshDiagram.Renderer.MermaidInkTest do
   use ExUnit.Case, async: true
 
-  import AshChart.Fixture
-  import AshChart.VisualAssertions
+  import AshDiagram.Fixture
+  import AshDiagram.VisualAssertions
 
-  alias AshChart.Renderer.MermaidInk
+  alias AshDiagram.Renderer.MermaidInk
 
   doctest MermaidInk
 
   describe inspect(&MermaidInk.render/2) do
     @tag :tmp_dir
-    test "renders a chart", %{tmp_dir: tmp_dir} do
+    test "renders a diagram", %{tmp_dir: tmp_dir} do
       data = read_fixture("flow.mmd")
 
       out = MermaidInk.render(data, format: :png, background_color: "white")
