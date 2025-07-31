@@ -46,7 +46,8 @@ defmodule AshChart.MixProject do
       source_ref: "v#{@version}",
       extras: ["README.md"],
       groups_for_modules: [
-        "ER Chart": ~r/AshChart\.EntityRelationship(\..*)?$/,
+        "Chart / ER": ~r/AshChart\.EntityRelationship(\..*)?$/,
+        "Chart / C4": ~r/AshChart\.C4(\..*)?$/,
         Renderers: ~r/AshChart\.Renderer(\..*)?$/
       ]
     ]

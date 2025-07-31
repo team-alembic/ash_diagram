@@ -2,18 +2,6 @@ defmodule AshChart.EntityRelationship do
   @moduledoc """
   Provides functions to handle Mermaid
   [Entity Relationship Diagrams](https://mermaid.js.org/syntax/entityRelationshipDiagram.html).
-
-  ## Example
-
-  ```mermaid
-  ---
-  title: Order example
-  ---
-  erDiagram
-      CUSTOMER ||--o{ ORDER : places
-      ORDER ||--|{ LINE-ITEM : contains
-      CUSTOMER }|..|{ DELIVERY-ADDRESS : uses
-  ```
   """
 
   @behaviour AshChart
