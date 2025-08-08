@@ -46,6 +46,7 @@ defmodule AshDiagram.MixProject do
       source_ref: "v#{@version}",
       extras: ["README.md"],
       groups_for_modules: [
+        "Generation / Introspection": ~r/AshDiagram\.Data(\..*)?$/,
         "Diagram / ER": ~r/AshDiagram\.EntityRelationship(\..*)?$/,
         "Diagram / C4": ~r/AshDiagram\.C4(\..*)?$/,
         Renderers: ~r/AshDiagram\.Renderer(\..*)?$/

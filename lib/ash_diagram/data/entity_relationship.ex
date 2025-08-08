@@ -124,10 +124,10 @@ defmodule AshDiagram.Data.EntityRelationship do
 
   @spec cardinality(relationship :: Relationships.relationship()) ::
           {DiagramImpl.Relationship.cardinality(), DiagramImpl.Relationship.cardinality()}
-  def cardinality(%Relationships.BelongsTo{allow_nil?: true}), do: {:zero_or_one, :zero_or_more}
-  def cardinality(%Relationships.BelongsTo{}), do: {:exactly_one, :zero_or_more}
-  def cardinality(%Relationships.HasMany{}), do: {:zero_or_more, :zero_or_one}
-  def cardinality(%Relationships.HasOne{}), do: {:exactly_one, :zero_or_one}
+  defp cardinality(%Relationships.BelongsTo{allow_nil?: true}), do: {:zero_or_one, :zero_or_more}
+  defp cardinality(%Relationships.BelongsTo{}), do: {:exactly_one, :zero_or_more}
+  defp cardinality(%Relationships.HasMany{}), do: {:zero_or_more, :zero_or_one}
+  defp cardinality(%Relationships.HasOne{}), do: {:exactly_one, :zero_or_one}
 
   @spec common_prefix(parts :: [module()]) :: [String.t()]
   defp common_prefix(parts)
