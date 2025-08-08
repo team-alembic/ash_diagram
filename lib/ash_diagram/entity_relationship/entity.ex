@@ -32,11 +32,12 @@ defmodule AshDiagram.EntityRelationship.Entity do
         [
           " {\n",
           Enum.map(attributes, &Attribute.compose/1),
-          "  }\n"
+          "  }"
         ]
       else
         []
-      end
+      end,
+      "\n"
     ]
   end
 end

@@ -39,7 +39,7 @@ with {:module, ExCmd} <- Code.ensure_compiled(ExCmd) do
           args = build_args(options)
 
           [mmdc_path, "-i", "-", "-o", "-" | args]
-          |> ExCmd.stream!(input: IO.iodata_to_binary(diagram), stderr: :disable)
+          |> ExCmd.stream!(input: IO.iodata_to_binary(diagram))
           |> Enum.to_list()
       end
     end

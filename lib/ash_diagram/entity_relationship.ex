@@ -31,6 +31,7 @@ defmodule AshDiagram.EntityRelationship do
   @enforce_keys [:entries]
   defstruct [:entries, title: nil, config: nil, direction: nil]
 
+  @doc false
   @impl AshDiagram
   def compose(%__MODULE__{} = diagram) do
     [

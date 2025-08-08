@@ -28,7 +28,7 @@ defmodule AshDiagram.MixProject do
   defp deps do
     # styler:sort
     [
-      {:ash, "~> 3.5"},
+      {:ash, "~> 3.5 and >= 3.5.34"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:doctest_formatter, "~> 0.4.0", only: [:dev, :test], runtime: false},
