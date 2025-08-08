@@ -20,5 +20,7 @@ defmodule AshDiagram.VisualAssertions do
 
     assert status == 0,
       message: "Image #{left} and #{right} are not alike, check #{diff} for details"
+
+    :ok
   end
 end
