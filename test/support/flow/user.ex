@@ -3,10 +3,41 @@ defmodule AshDiagram.Flow.User do
   use Ash.Resource,
     domain: AshDiagram.Flow.Domain,
     data_layer: Ash.DataLayer.Mnesia,
+    authorizers: [Ash.Policy.Authorizer],
     extensions: [AshDiagram.DummyExtension]
 
   resource do
     description "User model"
+  end
+
+  policies do
+    # Simple authorization policy
+    policy action_type(:read) do
+      authorize_if always()
+    end
+
+    # Complex policy with conditions
+    policy action_type(:update) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if relates_to_actor_via(:org)
+    end
+
+    # Forbid policy
+    policy action_type(:destroy) do
+      forbid_if actor_attribute_equals(:role, :guest)
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+
+    # Policy with multiple conditions
+    policy action(:create) do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if expr(approved == true and relates_to_actor_via(:org))
+    end
+
+    # Bypass policy
+    bypass actor_attribute_equals(:role, :super_admin) do
+      authorize_if always()
+    end
   end
 
   actions do
@@ -73,6 +104,12 @@ defmodule AshDiagram.Flow.User do
 
     attribute :approved, :boolean do
       description "Is the user approved?"
+    end
+
+    attribute :role, :atom do
+      description "User's role"
+      constraints one_of: [:guest, :user, :admin, :super_admin]
+      default :user
     end
   end
 

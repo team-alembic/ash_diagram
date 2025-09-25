@@ -62,7 +62,8 @@ defmodule AshDiagram.Flowchart.Edge do
   defp insert_label_in_syntax(syntax, label) do
     cond do
       String.ends_with?(syntax, ">") ->
-        base = String.slice(syntax, 0, String.length(syntax) - 1)
+        base_length = String.length(syntax) - 1
+        <<base::binary-size(base_length), _::binary>> = syntax
         [base, ">|", label, "|"]
 
       String.contains?(syntax, "o") or String.contains?(syntax, "x") ->

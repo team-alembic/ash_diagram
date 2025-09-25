@@ -93,7 +93,7 @@ defmodule AshDiagram.Flowchart.Subgraph do
       if String.trim(line) == "" do
         line
       else
-        extra_indent <> line
+        [extra_indent, line]
       end
     end)
   end

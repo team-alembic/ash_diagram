@@ -24,7 +24,7 @@ defmodule AshDiagram.Flowchart do
   @type config() :: map()
 
   @type t() :: %__MODULE__{
-          title: String.t() | nil,
+          title: iodata() | nil,
           config: config() | nil,
           direction: direction() | nil,
           entries: [Node.t() | Edge.t() | Subgraph.t() | Style.t()]
@@ -61,7 +61,7 @@ defmodule AshDiagram.Flowchart do
         []
       end,
       if config do
-        ["config: ", Jason.encode!(config), "\n"]
+        ["config: ", JSON.encode_to_iodata!(config), "\n"]
       else
         []
       end,

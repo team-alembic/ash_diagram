@@ -25,6 +25,7 @@ defmodule AshDiagram.Data.ClassTest do
                    +destroy() : destroy~Org~
                    +read() : read~Org~
                    +by_name(String name) : read~Org~
+                   +archive() : update~Org~
                  }
                  class `AshDiagram.Flow.User`["User"] {
                    +UUID id
