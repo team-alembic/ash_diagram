@@ -4,7 +4,9 @@ defmodule AshDiagram.DummyExtension do
 
   use Spark.Dsl.Extension
 
+  alias AshDiagram.Class
   alias AshDiagram.Data.Extension
+  alias AshDiagram.EntityRelationship
 
   @impl Extension
   def supports?(_creator), do: true
@@ -12,11 +14,17 @@ defmodule AshDiagram.DummyExtension do
   @impl Extension
   def extend_diagram(creator, diagram)
 
-  def extend_diagram(_creator, %AshDiagram.EntityRelationship{} = diagram) do
+  def extend_diagram(_creator, %EntityRelationship{} = diagram) do
     %{
       diagram
-      | entries:
-          [%AshDiagram.EntityRelationship.Entity{id: "dummy", label: "♡"}] ++ diagram.entries
+      | entries: [%EntityRelationship.Entity{id: "dummy", label: "♡"}] ++ diagram.entries
+    }
+  end
+
+  def extend_diagram(_creator, %Class{} = diagram) do
+    %{
+      diagram
+      | entries: [%Class.Class{id: "dummy", label: "♡"}] ++ diagram.entries
     }
   end
 end

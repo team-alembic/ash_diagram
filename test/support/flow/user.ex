@@ -48,6 +48,11 @@ defmodule AshDiagram.Flow.User do
       accept []
       change set_attribute(:approved, false)
     end
+
+    action :report, :boolean do
+      allow_nil? true
+      argument :reason, :string, allow_nil?: false
+    end
   end
 
   code_interface do
