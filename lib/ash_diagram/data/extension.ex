@@ -7,7 +7,10 @@ defmodule AshDiagram.Data.Extension do
   """
 
   @type creator() ::
-          AshDiagram.Data.EntityRelationship | AshDiagram.Data.Class | AshDiagram.Data.Policy
+          AshDiagram.Data.EntityRelationship
+          | AshDiagram.Data.Class
+          | AshDiagram.Data.Policy
+          | AshDiagram.Data.Architecture
 
   @doc """
   Checks if the extension creator supports the given creator.

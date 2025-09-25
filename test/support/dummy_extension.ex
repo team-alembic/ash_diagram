@@ -4,6 +4,7 @@ defmodule AshDiagram.DummyExtension do
 
   use Spark.Dsl.Extension
 
+  alias AshDiagram.C4
   alias AshDiagram.Class
   alias AshDiagram.Data.Extension
   alias AshDiagram.EntityRelationship
@@ -33,6 +34,15 @@ defmodule AshDiagram.DummyExtension do
     %{
       diagram
       | entries: [%Flowchart.Node{id: "dummy", label: "♡", shape: :circle}] ++ diagram.entries
+    }
+  end
+
+  def extend_diagram(_creator, %C4{} = diagram) do
+    %{
+      diagram
+      | entries:
+          [%C4.Element{type: :system, external?: false, alias: "dummy", label: "♡"}] ++
+            diagram.entries
     }
   end
 end
