@@ -70,7 +70,7 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
       :ok = :zlib.deflateEnd(z)
       :ok = :zlib.close(z)
 
-      "pako:" <> Base.url_encode64(compressed, padding: false)
+      IO.iodata_to_binary(["pako:", Base.url_encode64(compressed, padding: false)])
     end
 
     @spec passthrough_options(
@@ -80,8 +80,11 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
           ) :: URI.t()
     defp passthrough_options(uri, options, option) do
       case Keyword.fetch(options, option) do
-        {:ok, value} -> URI.append_query(uri, to_string(option) <> "=" <> to_string(value))
-        :error -> uri
+        {:ok, value} ->
+          URI.append_query(uri, IO.iodata_to_binary([to_string(option), "=", to_string(value)]))
+
+        :error ->
+          uri
       end
     end
   end

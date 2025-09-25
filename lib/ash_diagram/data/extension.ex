@@ -6,7 +6,8 @@ defmodule AshDiagram.Data.Extension do
   data to the diagrams.
   """
 
-  @type creator() :: AshDiagram.Data.EntityRelationship | AshDiagram.Data.Class
+  @type creator() ::
+          AshDiagram.Data.EntityRelationship | AshDiagram.Data.Class | AshDiagram.Data.Policy
 
   @doc """
   Checks if the extension creator supports the given creator.

@@ -1,6 +1,7 @@
 defmodule AshDiagram.Flow.Domain do
   @moduledoc false
-  use Ash.Domain
+  use Ash.Domain,
+    extensions: [AshDiagram.DummyExtension]
 
   resources do
     resource AshDiagram.Flow.User

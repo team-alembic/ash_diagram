@@ -22,7 +22,7 @@ defmodule AshDiagram.EntityRelationship do
   @type config() :: map()
 
   @type t() :: %__MODULE__{
-          title: String.t() | nil,
+          title: iodata() | nil,
           config: config() | nil,
           direction: direction() | nil,
           # TODO: Do Style, ClassDef and Class
