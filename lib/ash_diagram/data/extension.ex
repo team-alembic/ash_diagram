@@ -6,7 +6,7 @@ defmodule AshDiagram.Data.Extension do
   data to the diagrams.
   """
 
-  @type creator() :: AshDiagram.Data.EntityRelationship
+  @type creator() :: AshDiagram.Data.EntityRelationship | AshDiagram.Data.Class
 
   @doc """
   Checks if the extension creator supports the given creator.
@@ -33,8 +33,9 @@ defmodule AshDiagram.Data.Extension do
   @spec construct_diagram(
           creator :: creator(),
           extensions :: [module()],
-          diagram :: AshDiagram.t()
-        ) :: AshDiagram.t()
+          diagram :: AshDiagram.t(diagram_impl)
+        ) :: AshDiagram.t(diagram_impl)
+        when diagram_impl: AshDiagram.implementation()
   def construct_diagram(creator, extensions, diagram) do
     for extension <- extensions,
         Spark.implements_behaviour?(extension, __MODULE__),
