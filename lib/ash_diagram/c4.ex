@@ -46,9 +46,16 @@ defmodule AshDiagram.C4 do
     [
       Map.fetch!(@types, type),
       "\n",
-      "  title ",
-      title,
-      "\n\n",
+      if IO.iodata_length(title) > 0 do
+        [
+          "  title ",
+          title,
+          "\n"
+        ]
+      else
+        []
+      end,
+      "\n",
       Enum.map(entries, &compose_entry(&1, "  "))
     ]
   end
