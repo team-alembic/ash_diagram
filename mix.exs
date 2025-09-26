@@ -47,15 +47,18 @@ defmodule AshDiagram.MixProject do
 
   defp docs do
     [
-      main: "readme",
+      main: "AshDiagram",
       source_ref: "v#{@version}",
-      extras: ["README.md"],
       groups_for_modules: [
         "Generation / Introspection": ~r/AshDiagram\.Data(\..*)?$/,
         "Diagram / ER": ~r/AshDiagram\.EntityRelationship(\..*)?$/,
+        "Diagram / Class": ~r/AshDiagram\.Class(\..*)?$/,
         "Diagram / C4": ~r/AshDiagram\.C4(\..*)?$/,
+        "Diagram / Flowchart": ~r/AshDiagram\.Flowchart(\..*)?$/,
         Renderers: ~r/AshDiagram\.Renderer(\..*)?$/
-      ]
+      ],
+      logo: "logos/logo.svg",
+      assets: %{"logos" => "logos"}
     ]
   end
 end

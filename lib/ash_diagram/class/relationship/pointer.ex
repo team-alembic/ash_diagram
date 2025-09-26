@@ -1,5 +1,8 @@
 defmodule AshDiagram.Class.Relationship.Pointer do
-  @moduledoc false
+  @moduledoc """
+  A pointer to a class in a class diagram.
+  """
+
   @types %{
     inheritance: {"<|", "|>"},
     composition: {"*", "*"},

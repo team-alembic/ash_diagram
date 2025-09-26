@@ -1,6 +1,13 @@
+readme_path = Path.join(__DIR__, "../README.md")
+
+readme_content =
+  readme_path
+  |> File.read!()
+  |> String.replace(~r/<!-- ex_doc_ignore_start -->.*?<!-- ex_doc_ignore_end -->/s, "")
+
 defmodule AshDiagram do
   @moduledoc """
-  AshDiagram is a library for rendering diagrams to introspect your Ash application.
+  #{readme_content}
   """
 
   alias AshDiagram.Renderer

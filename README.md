@@ -1,6 +1,8 @@
 <img src="logos/logo.svg" alt="AshDiagram Logo" width="250">
 
+<!-- ex_doc_ignore_start -->
 # AshDiagram
+<!-- ex_doc_ignore_end -->
 
 **AshDiagram** is an Elixir library for generating beautiful, interactive diagrams to visualize your [Ash Framework](https://ash-hq.org/) applications. Generate Entity Relationship diagrams, Class diagrams, C4 Architecture diagrams, and Policy flowcharts directly from your Ash resources and domains.
 
