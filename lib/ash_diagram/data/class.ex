@@ -1,6 +1,21 @@
 defmodule AshDiagram.Data.Class do
   @moduledoc """
-  Provides functions to create Diagrams for Ash applications.
+  Provides functions to create UML Class Diagrams for Ash applications.
+
+  This module generates class diagrams showing Ash resources with their attributes,
+  calculations, aggregates, actions, and relationships. Public and private visibility
+  is respected based on the Ash resource configuration.
+
+  ## Ash-Specific Features
+
+  - **Resource Attributes**: All resource attributes with Ash types
+  - **Calculations**: Ash calculations as computed fields
+  - **Aggregates**: Ash aggregates with their types
+  - **Actions**: Resource actions (create, read, update, delete, action) as methods
+  - **Relationships**: Ash relationships with proper cardinality mapping
+  - **Visibility**: Respects Ash `public?` settings for attributes and relationships
+  - **Extensions**: Automatically includes diagrams from Ash extensions
+
   """
 
   alias Ash.Domain.Info
@@ -12,7 +27,18 @@ defmodule AshDiagram.Data.Class do
   alias AshDiagram.Class.Relationship.Pointer
   alias AshDiagram.Data.Extension
 
+  @typedoc """
+  Configuration option for class diagram generation.
+
+  Available options:
+  - `{:name, :full | :short}` - How to display resource names. `:full` shows complete module names, `:short` shows shortened names with common prefixes removed
+  - `{:show_private?, boolean()}` - Whether to include private attributes, calculations, aggregates, and relationships in the diagram
+  """
   @type option() :: {:name, :full | :short} | {:show_private?, boolean()}
+
+  @typedoc """
+  List of configuration options for class diagram generation.
+  """
   @type options() :: [option()]
 
   @default_options [
@@ -20,15 +46,89 @@ defmodule AshDiagram.Data.Class do
     show_private?: false
   ]
 
+  @doc """
+  Generates a class diagram for the given OTP applications.
+
+  Creates a UML class diagram showing all Ash resources from the specified
+  OTP applications, including their attributes, calculations, aggregates,
+  actions, and relationships.
+
+  ## Parameters
+
+  - `applications` - List of OTP application names (e.g., `[:my_app, :other_app]`)
+  - `options` - Keyword list of options, see `t:option/0` for available options
+
+  ## Examples
+
+      # Generate class diagram for a single application
+      AshDiagram.Data.Class.for_applications([:my_app])
+
+      # Generate diagram with full module names
+      AshDiagram.Data.Class.for_applications([:my_app], name: :full)
+
+      # Include private attributes and relationships
+      AshDiagram.Data.Class.for_applications([:my_app], show_private?: true)
+
+  """
   @spec for_applications(applications :: [Application.app()], options :: options()) ::
           AshDiagram.t()
   def for_applications(applications, options \\ []),
     do: applications |> Enum.flat_map(&Ash.Info.domains/1) |> for_domains(options)
 
+  @doc """
+  Generates a class diagram for the given Ash domains.
+
+  Creates a UML class diagram showing all resources within the specified domains,
+  including their attributes, calculations, aggregates, actions, and relationships.
+
+  ## Parameters
+
+  - `domains` - List of Ash domain modules (e.g., `[MyApp.Blog, MyApp.Accounts]`)
+  - `options` - Keyword list of options, see `t:option/0` for available options
+
+  ## Examples
+
+      # Generate class diagram for specific domains
+      AshDiagram.Data.Class.for_domains([MyApp.Blog, MyApp.Accounts])
+
+      # Generate diagram with short names only
+      AshDiagram.Data.Class.for_domains([MyApp.Blog], name: :short)
+
+  """
   @spec for_domains(domains :: [Ash.Domain.t()], options :: options()) :: AshDiagram.t()
   def for_domains(domains, options \\ []),
     do: domains |> Enum.flat_map(&Info.resources/1) |> for_resources(options)
 
+  @doc """
+  Generates a class diagram for the given Ash resources.
+
+  Creates a UML class diagram showing the specified resources with:
+  - Class boxes containing attributes, calculations, aggregates, and actions
+  - Relationship lines with cardinality indicators
+  - Public/private visibility indicators
+  - Type information for all fields and methods
+
+  ## Parameters
+
+  - `resources` - List of Ash resource modules (e.g., `[MyApp.User, MyApp.Post]`)
+  - `options` - Keyword list of options, see `t:option/0` for available options
+
+  ## Examples
+
+      # Generate class diagram for specific resources
+      AshDiagram.Data.Class.for_resources([MyApp.User, MyApp.Post])
+
+      # Use full module names and show private fields
+      AshDiagram.Data.Class.for_resources(
+        [MyApp.User, MyApp.Post],
+        name: :full,
+        show_private?: true
+      )
+
+      # Generate diagram with only public elements
+      AshDiagram.Data.Class.for_resources([MyApp.User], show_private?: false)
+
+  """
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)

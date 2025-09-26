@@ -18,6 +18,24 @@ defmodule AshDiagram.Class.Member do
   visibility_typespec = Enum.reduce(@visibility_keys, &{:|, [], [&1, &2]})
   @type visibility() :: unquote(visibility_typespec)
 
+  @typedoc """
+  Type specification for class members.
+
+  Can be either a simple type name or a generic type with parameters:
+  - `iodata()` - Simple type like `"String"`, `"Integer"`, `"User"`
+  - `{:generic, name, inner_type}` - Generic type like `List<String>` or `Optional<User>`
+
+  ## Examples
+
+      # Simple type
+      "String"
+
+      # Generic type with simple inner type
+      {:generic, "List", "String"}
+
+      # Nested generic types
+      {:generic, "Optional", {:generic, "List", "User"}}
+  """
   @type type() :: iodata() | {:generic, iodata(), type()}
 
   @doc false

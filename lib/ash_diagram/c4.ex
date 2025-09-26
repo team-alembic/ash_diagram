@@ -32,7 +32,7 @@ defmodule AshDiagram.C4 do
 
   @type entry() :: Element.t() | Boundary.t() | Relationship.t() | RelationshipIndex.t()
 
-  @doc false
+  @typedoc false
   @type attribute() ::
           {:index, non_neg_integer() | nil}
           | {:string, iodata() | nil}
@@ -41,6 +41,7 @@ defmodule AshDiagram.C4 do
   @enforce_keys [:type, :title, :entries]
   defstruct [:type, :title, :entries]
 
+  @doc false
   @impl AshDiagram
   def compose(%__MODULE__{type: type, title: title, entries: entries} = _diagram) do
     [

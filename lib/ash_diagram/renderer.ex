@@ -10,6 +10,33 @@ defmodule AshDiagram.Renderer do
   @type dimension() :: pos_integer()
   @type color() :: String.t()
 
+  @typedoc """
+  Single rendering option for customizing diagram output.
+
+  ## Available Options
+
+  - `{:theme, theme()}` - Visual theme (`:default`, `:forest`, `:dark`, `:neutral`)
+  - `{:format, format()}` - Output format (`:svg`, `:png`, `:pdf`)
+  - `{:width, dimension()}` - Output width in pixels
+  - `{:height, dimension()}` - Output height in pixels
+  - `{:background_color, color()}` - Background color (e.g., `"white"`, `"#ffffff"`)
+  - `{:config_file, Path.t()}` - Path to Mermaid configuration file
+  - `{:svg_id, String.t()}` - Custom SVG element ID
+  - `{:scale, float()}` - Scale factor for output (e.g., `1.0`, `2.0`)
+  - `{:puppeteer_config_file, Path.t()}` - Path to Puppeteer configuration
+  - `{:icon_packs, [String.t()]}` - List of icon pack names
+
+  ## Examples
+
+      # Set dark theme with PNG output
+      [{:theme, :dark}, {:format, :png}]
+
+      # High resolution SVG with custom size
+      [{:format, :svg}, {:width, 1920}, {:height, 1080}, {:scale, 2.0}]
+
+      # PDF with custom background color
+      [{:format, :pdf}, {:background_color, "#f8f9fa"}]
+  """
   @type option() ::
           {:theme, theme()}
           | {:format, format()}
@@ -21,6 +48,10 @@ defmodule AshDiagram.Renderer do
           | {:scale, float()}
           | {:puppeteer_config_file, Path.t()}
           | {:icon_packs, [String.t()]}
+
+  @typedoc """
+  List of rendering options. See `t:option/0` for available options.
+  """
   @type options() :: [option()]
 
   @doc """

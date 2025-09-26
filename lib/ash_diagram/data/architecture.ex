@@ -32,15 +32,6 @@ defmodule AshDiagram.Data.Architecture do
   - `Ash.DataLayer.Mnesia` → `:ash` application
   - `AshPostgres.DataLayer` → `:ash_postgres` application
 
-  ## Example
-
-      # Generate an architecture diagram for resources
-      diagram = AshDiagram.Data.Architecture.for_resources([MyApp.User, MyApp.Post])
-
-      # Generate for domains or applications
-      diagram = AshDiagram.Data.Architecture.for_domains([MyApp.Blog])
-      diagram = AshDiagram.Data.Architecture.for_applications([:my_app])
-
   """
 
   alias Ash.Domain.Info
@@ -51,11 +42,22 @@ defmodule AshDiagram.Data.Architecture do
   alias AshDiagram.C4.Relationship
   alias AshDiagram.Data.Extension
 
+  @typedoc """
+  Configuration option for architecture diagram generation.
+
+  Available options:
+  - `{:name, :full | :short}` - How to display resource names. `:full` shows complete module names, `:short` shows shortened names with common prefixes removed
+  - `{:show_private?, boolean()}` - Whether to include private relationships in the diagram
+  - `{:title, String.t()}` - Custom title for the diagram
+  """
   @type option() ::
           {:name, :full | :short}
           | {:show_private?, boolean()}
           | {:title, String.t()}
 
+  @typedoc """
+  List of configuration options for architecture diagram generation.
+  """
   @type options() :: [option()]
 
   @default_options [
@@ -64,15 +66,93 @@ defmodule AshDiagram.Data.Architecture do
     title: nil
   ]
 
+  @doc """
+  Generates an architecture diagram for the given OTP applications.
+
+  Creates a C4 context diagram showing the architecture hierarchy of Ash applications
+  within the specified OTP applications. All domains from the applications are included.
+
+  ## Parameters
+
+  - `applications` - List of OTP application names (e.g., `[:my_app, :other_app]`)
+  - `options` - Keyword list of options, see `t:option/0` for available options
+
+  ## Examples
+
+      # Generate diagram for a single application
+      AshDiagram.Data.Architecture.for_applications([:my_app])
+
+      # Generate diagram with full module names
+      AshDiagram.Data.Architecture.for_applications([:my_app], name: :full)
+
+      # Include private resources and relationships
+      AshDiagram.Data.Architecture.for_applications([:my_app], show_private?: true)
+
+  """
   @spec for_applications(applications :: [Application.app()], options :: options()) ::
           AshDiagram.t()
   def for_applications(applications, options \\ []),
     do: applications |> Enum.flat_map(&Ash.Info.domains/1) |> for_domains(options)
 
+  @doc """
+  Generates an architecture diagram for the given Ash domains.
+
+  Creates a C4 context diagram showing the architecture hierarchy for all resources
+  within the specified domains.
+
+  ## Parameters
+
+  - `domains` - List of Ash domain modules (e.g., `[MyApp.Blog, MyApp.Accounts]`)
+  - `options` - Keyword list of options, see `t:option/0` for available options
+
+  ## Examples
+
+      # Generate diagram for specific domains
+      AshDiagram.Data.Architecture.for_domains([MyApp.Blog, MyApp.Accounts])
+
+      # Generate diagram with a custom title
+      AshDiagram.Data.Architecture.for_domains([MyApp.Blog], title: "Blog Domain Architecture")
+
+  """
   @spec for_domains(domains :: [Ash.Domain.t()], options :: options()) :: AshDiagram.t()
   def for_domains(domains, options \\ []),
     do: domains |> Enum.flat_map(&Info.resources/1) |> for_resources(options)
 
+  @doc """
+  Generates an architecture diagram for the given Ash resources.
+
+  Creates a C4 context diagram showing the complete architecture hierarchy including:
+  - BEAM VM as the root boundary
+  - OTP applications containing the resources and their data layers
+  - Domain boundaries within applications
+  - Resources within domains
+  - Data layer connections
+  - Resource relationships
+
+  ## Parameters
+
+  - `resources` - List of Ash resource modules (e.g., `[MyApp.User, MyApp.Post]`)
+  - `options` - Keyword list of options, see `t:option/0` for available options
+
+  ## Examples
+
+      # Generate diagram for specific resources
+      AshDiagram.Data.Architecture.for_resources([MyApp.User, MyApp.Post])
+
+      # Use full module names and show private relationships
+      AshDiagram.Data.Architecture.for_resources(
+        [MyApp.User, MyApp.Post],
+        name: :full,
+        show_private?: true
+      )
+
+      # Add a custom title
+      AshDiagram.Data.Architecture.for_resources(
+        [MyApp.User, MyApp.Post],
+        title: "User Management Architecture"
+      )
+
+  """
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)

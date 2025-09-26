@@ -11,10 +11,10 @@ defmodule AshDiagram.Class.Method do
           type: Member.type() | nil,
           abstract: boolean(),
           static: boolean(),
-          arguments: [agument()]
+          arguments: [argument()]
         }
 
-  @type agument() :: {iodata(), Member.type() | nil}
+  @type argument() :: {iodata(), Member.type() | nil}
 
   @enforce_keys [:name]
   defstruct [:visibility, :name, :type, abstract: false, static: false, arguments: []]
@@ -49,7 +49,7 @@ defmodule AshDiagram.Class.Method do
     ]
   end
 
-  @spec compose_arguments(arguments :: [agument()]) :: iodata()
+  @spec compose_arguments(arguments :: [argument()]) :: iodata()
   defp compose_arguments(arguments) do
     arguments
     |> Enum.map(fn {name, type} ->

@@ -130,6 +130,59 @@ end
 config :ash_diagram, :renderer, MyApp.CustomRenderer
 ```
 
+#### Diagram Extensions
+
+You can extend generated diagrams with custom data by implementing the `AshDiagram.Data.Extension` behaviour. This allows you to add additional elements to any diagram type.
+
+```elixir
+defmodule MyApp.DiagramExtension do
+  @behaviour AshDiagram.Data.Extension
+
+  use Spark.Dsl.Extension
+
+  @impl AshDiagram.Data.Extension
+  def supports?(AshDiagram.Data.Architecture), do: true
+  def supports?(_creator), do: false
+
+  @impl AshDiagram.Data.Extension
+  def extend_diagram(AshDiagram.Data.Architecture, %AshDiagram.C4{} = diagram) do
+    # Add custom element to C4 architecture diagrams
+    custom_element = %AshDiagram.C4.Element{
+      type: :system,
+      external?: true,
+      alias: "external_system",
+      label: "External System"
+    }
+    %{diagram | entries: [custom_element | diagram.entries]}
+  end
+end
+```
+
+**Extension Discovery**: Extensions are discovered by adding them to your Ash domains and resources:
+
+```elixir
+# Add to domain
+defmodule MyApp.Accounts do
+  use Ash.Domain,
+    extensions: [MyApp.DiagramExtension]
+
+  resources do
+    resource MyApp.Accounts.User
+  end
+end
+
+# Add to specific resources
+defmodule MyApp.Accounts.User do
+  use Ash.Resource,
+    domain: MyApp.Accounts,
+    extensions: [MyApp.DiagramExtension]
+
+  # ... resource definition
+end
+```
+
+Extensions are automatically collected from all domains and resources when generating diagrams.
+
 ## Examples
 
 ### Entity Relationship Diagram

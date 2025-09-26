@@ -7,6 +7,12 @@ defmodule AshDiagram.VisualAssertions do
 
   require Logger
 
+  @doc """
+  Asserts that two images are visually alike, allowing minor differences.
+  If they differ significantly, a diff image is generated.
+  If the environment variable `OVERWRITE_VISUALS` is set to a truthy value,
+  the expectation image is overwritten with the actual image when they differ.
+  """
   @spec assert_alike(actual :: Path.t(), expectation :: Path.t(), diff :: Path.t()) :: :ok
   def assert_alike(actual, expectation, diff) do
     compare_path = System.find_executable("compare")
