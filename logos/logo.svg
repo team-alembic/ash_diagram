@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="123" height="100" fill="none">
+  <defs>
+    <marker id="a" markerHeight="4" markerWidth="3" orient="auto" refX="2" refY="2">
+      <path stroke="#000" d="m0 0 2 2-2 2"/>
+    </marker>
+  </defs>
+  <mask id="b" mask-type="luminance">
+    <path fill="#fff" d="M0 0h123v100H0z"/>
+    <circle cx="61.5" cy="18" r="6" fill="#000" stroke="#000" stroke-width="2"/>
+    <path stroke="#000" stroke-width="2" marker-end="url(#a)" d="M61.5 22.5v15"/>
+    <g stroke="#000" stroke-width="2" style="transform:translateY(5px)">
+      <path d="M61.5 33.5h20v20h-20z" style="transform-box:fill-box;transform:rotate(45deg)"/>
+      <path marker-end="url(#a)" d="M75.64 47.64h5.86s5 0 5 5V65.1"/>
+      <path marker-end="url(#a)" d="M47.36 47.64H41.5s-5 0-5 5V65.1"/>
+      <path d="M71 67.5h31v20H71zm-50 0h31v20H21z"/>
+    </g>
+  </mask>
+  <g mask="url(#b)" style="opacity:.5">
+    <path fill="#FF5757" d="m61.182 0 61.182 100h-3.331L44.168 27.809 61.182 0Z"/>
+    <path fill="#FF914D" d="M22.235 100h7.181l38.572-46.458-24.315-23.447L22.235 100Z"/>
+    <path fill="#FFBD59" d="M52.358 100H32.002l20.7-24.932L52.357 100Z"/>
+    <path fill="#FF5757" d="M54.348 100h37.294L54.725 72.751 54.348 100Z"/>
+    <path fill="#FF914D" d="M95.882 100 70.865 56.318l45.3 43.682H95.882Z"/>
+    <path fill="#FFBD59" d="m92.56 98.203-36.623-27.03 12.512-15.071 24.11 42.101ZM20.154 100H0l40.407-66.045L20.154 100Z"/>
+  </g>
+</svg>
