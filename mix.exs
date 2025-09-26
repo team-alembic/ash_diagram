@@ -45,7 +45,7 @@ defmodule AshDiagram.MixProject do
       {:doctest_formatter, "~> 0.4.0", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.18", only: [:dev, :test]},
       {:ex_check, "~> 0.15", only: [:dev, :test]},
-      {:ex_cmd, "~> 0.15.0", optional: true},
+      {:ex_cmd, "~> 0.16.0", optional: true},
       {:ex_doc, "~> 0.38.2", only: [:dev, :test], runtime: false},
       {:git_ops, "~> 2.4", only: [:dev, :test], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false},
