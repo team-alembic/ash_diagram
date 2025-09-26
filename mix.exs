@@ -22,7 +22,10 @@ defmodule AshDiagram.MixProject do
 
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      env: [
+        clarity_introspectors: [AshDiagram.ClarityIntrospector]
+      ]
     ]
   end
 
@@ -30,6 +33,7 @@ defmodule AshDiagram.MixProject do
     # styler:sort
     [
       {:ash, "~> 3.5 and >= 3.5.34"},
+      {:clarity, "~> 0.1.2", optional: true},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:doctest_formatter, "~> 0.4.0", only: [:dev, :test], runtime: false},
