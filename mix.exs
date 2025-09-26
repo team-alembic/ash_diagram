@@ -12,6 +12,11 @@ defmodule AshDiagram.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       consolidate_protocols: Mix.env() != :test,
       deps: deps(),
+      name: "AshDiagram",
+      description:
+        "AshDiagram is a library for generating beautiful, interactive diagrams to visualize your Ash Framework applications.",
+      source_url: "https://github.com/team-alembic/ash_diagram",
+      package: package(),
       docs: &docs/0
     ]
   end
@@ -42,6 +47,20 @@ defmodule AshDiagram.MixProject do
       {:picosat_elixir, "~> 0.2.3", only: [:dev, :test]},
       {:req, "~> 0.5.15", optional: true},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["Alembic Pty Ltd"],
+      files: [
+        "lib",
+        "LICENSE*",
+        "mix.exs",
+        "README*"
+      ],
+      licenses: ["Apache-2.0"],
+      links: %{"Github" => "https://github.com/team-alembic/ash_diagram"}
     ]
   end
 
