@@ -39,13 +39,20 @@ defmodule AshDiagram.MixProject do
     [
       {:ash, "~> 3.5 and >= 3.5.34"},
       {:clarity, "~> 0.1.2", optional: true},
+      # Development
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:doctest_formatter, "~> 0.4.0", only: [:dev, :test], runtime: false},
+      {:doctor, "~> 0.18", only: [:dev, :test]},
+      {:ex_check, "~> 0.15", only: [:dev, :test]},
       {:ex_cmd, "~> 0.15.0", optional: true},
       {:ex_doc, "~> 0.38.2", only: [:dev, :test], runtime: false},
+      {:git_ops, "~> 2.4", only: [:dev, :test], runtime: false},
+      {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false},
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:picosat_elixir, "~> 0.2.3", only: [:dev, :test]},
       {:req, "~> 0.5.15", optional: true},
+      {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
