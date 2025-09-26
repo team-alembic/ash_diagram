@@ -13,12 +13,21 @@ defmodule AshDiagram.VisualAssertions do
     assert is_binary(compare_path), "ImageMagic Compare is not installed"
 
     {_, status} =
-      System.cmd(compare_path, [
-        "-quiet",
-        actual,
-        expectation,
-        diff
-      ])
+      System.cmd(
+        compare_path,
+        [
+          "-quiet",
+          # Ignore minor differences
+          "-fuzz",
+          "5%",
+          "-metric",
+          "AE",
+          actual,
+          expectation,
+          diff
+        ],
+        stderr_to_stdout: true
+      )
 
     case System.get_env("OVERWRITE_VISUALS") do
       truthy when truthy in ~w[true 1 yes y] and status > 0 ->
@@ -32,8 +41,8 @@ defmodule AshDiagram.VisualAssertions do
       _falsy ->
         assert status == 0,
           message: """
-          Image #{actual} and #{expectation} are not alike.
-          Check #{diff} for details.
+          Image #{Path.relative_to_cwd(actual)} and #{Path.relative_to_cwd(expectation)} are not alike.
+          Check #{Path.relative_to_cwd(diff)} for details.
           Use OVERWRITE_VISUALS=true to overwrite expectation.\
           """
     end

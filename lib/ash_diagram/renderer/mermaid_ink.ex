@@ -21,6 +21,40 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
 
     @behaviour AshDiagram.Renderer
 
+    defmodule ServerError do
+      @moduledoc false
+      defexception [:response]
+
+      @type t() :: %__MODULE__{
+              __exception__: true,
+              response: Req.Response.t()
+            }
+
+      @impl Exception
+      def exception(opts), do: %__MODULE__{response: opts[:response]}
+
+      @impl true
+      def message(%__MODULE__{response: response}),
+        do: "Mermaid.ink server error (#{response.status}): #{inspect(response.body)}"
+    end
+
+    defmodule UnknownResponseError do
+      @moduledoc false
+      defexception [:response]
+
+      @type t() :: %__MODULE__{
+              __exception__: true,
+              response: Req.Response.t()
+            }
+
+      @impl Exception
+      def exception(opts), do: %__MODULE__{response: opts[:response]}
+
+      @impl true
+      def message(%__MODULE__{response: response}),
+        do: "Unexpected response from Mermaid.ink (#{response.status}): #{inspect(response.body)}"
+    end
+
     @doc false
     @impl AshDiagram.Renderer
     def supported?, do: true
@@ -28,30 +62,62 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
     @doc false
     @impl AshDiagram.Renderer
     def render(diagram, options) do
+      diagram
+      |> build_uri(options)
+      |> Req.get!()
+      |> handle_response()
+    end
+
+    @spec build_uri(diagram :: iodata(), options :: AshDiagram.Renderer.options()) :: URI.t()
+    defp build_uri(diagram, options) do
       uri = URI.new!("https://mermaid.ink/img/#{encode(diagram)}")
 
-      uri =
-        case Keyword.get(options, :format, :jpeg) do
-          :jpeg -> URI.append_query(uri, "type=jpeg")
-          :png -> URI.append_query(uri, "type=png")
-          :webp -> URI.append_query(uri, "type=webp")
-          :svg -> URI.append_path(uri, "svg")
-          :pdf -> URI.append_path(uri, "pdf")
-        end
+      uri
+      |> apply_format(options)
+      |> apply_background_color(options)
+      |> apply_passthrough_options(options)
+    end
 
-      uri =
-        case Keyword.fetch(options, :background_color) do
-          {:ok, color} -> URI.append_query(uri, "bgColor=#{color}")
-          :error -> uri
-        end
+    @spec apply_format(uri :: URI.t(), options :: AshDiagram.Renderer.options()) :: URI.t()
+    defp apply_format(uri, options) do
+      case Keyword.get(options, :format, :jpeg) do
+        :jpeg -> URI.append_query(uri, "type=jpeg")
+        :png -> URI.append_query(uri, "type=png")
+        :webp -> URI.append_query(uri, "type=webp")
+        :svg -> URI.append_path(uri, "svg")
+        :pdf -> URI.append_path(uri, "pdf")
+      end
+    end
 
-      uri =
-        Enum.reduce([:width, :height, :scale, :theme], uri, fn option, acc ->
-          passthrough_options(acc, options, option)
-        end)
+    @spec apply_background_color(uri :: URI.t(), options :: AshDiagram.Renderer.options()) ::
+            URI.t()
+    defp apply_background_color(uri, options) do
+      case Keyword.fetch(options, :background_color) do
+        {:ok, color} -> URI.append_query(uri, "bgColor=#{color}")
+        :error -> uri
+      end
+    end
 
-      %Req.Response{status: 200, body: body} = Req.get!(uri)
-      body
+    @spec apply_passthrough_options(uri :: URI.t(), options :: AshDiagram.Renderer.options()) ::
+            URI.t()
+    defp apply_passthrough_options(uri, options) do
+      Enum.reduce([:width, :height, :scale, :theme], uri, fn option, acc ->
+        passthrough_options(acc, options, option)
+      end)
+    end
+
+    @spec handle_response(response :: Req.Response.t()) :: binary()
+    defp handle_response(response) do
+      case response do
+        %Req.Response{status: 200, body: body} ->
+          body
+
+        %Req.Response{status: status} = response when status >= 500 and status < 600 ->
+          raise ServerError, response: response
+
+        %Req.Response{} = response ->
+          raise UnknownResponseError, response: response
+      end
     end
 
     @spec encode(diagram :: iodata()) :: String.t()

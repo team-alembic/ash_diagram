@@ -10,20 +10,26 @@ defmodule AshDiagram.Renderer.MermaidInkTest do
 
   describe inspect(&MermaidInk.render/2) do
     @tag :tmp_dir
+    @tag :external
     test "renders a diagram", %{tmp_dir: tmp_dir} do
       data = read_fixture("flow.mmd")
 
-      out = MermaidInk.render(data, format: :png, background_color: "white")
+      try do
+        out = MermaidInk.render(data, format: :png, background_color: "white")
 
-      out_path = Path.join(tmp_dir, "output.png")
+        out_path = Path.join(tmp_dir, "output.png")
 
-      File.write!(out_path, out)
+        File.write!(out_path, out)
 
-      assert_alike(
-        out_path,
-        fixture_path("ink-flow.png"),
-        Path.join(tmp_dir, "diff.png")
-      )
+        assert_alike(
+          out_path,
+          fixture_path("ink-flow.png"),
+          Path.join(tmp_dir, "diff.png")
+        )
+      rescue
+        error in MermaidInk.ServerError ->
+          IO.warn("Mermaid.ink service unavailable, skipping test: #{Exception.message(error)}", __STACKTRACE__)
+      end
     end
   end
 end
