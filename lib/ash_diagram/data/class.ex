@@ -214,9 +214,9 @@ defmodule AshDiagram.Data.Class do
   defp compose_type(type, allow_nil? \\ false)
   defp compose_type(type, true), do: [??, compose_type(type)]
 
-  defp compose_type({:array, inner_type}, false),
-    do: {:generic, "array", compose_type(inner_type)}
+  defp compose_type({:array, inner_type}, false), do: [compose_type(inner_type), "[]"]
 
+  defp compose_type(nil, false), do: "unknown"
   defp compose_type(module, false), do: module |> Module.split() |> List.last()
 
   @spec cardinality(relationship :: Relationships.relationship()) :: {iodata(), iodata()}

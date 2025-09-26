@@ -10,7 +10,7 @@ defmodule AshDiagram.Data.Policy do
   alias Ash.Policy.Info
   alias Ash.Policy.Policy
   alias AshDiagram.Data.Extension
-  alias AshDiagram.Flowchart, as: DiagramImpl
+  alias AshDiagram.Flowchart
   alias AshDiagram.Flowchart.Edge
   alias AshDiagram.Flowchart.Node
   alias AshDiagram.Flowchart.Style
@@ -56,7 +56,7 @@ defmodule AshDiagram.Data.Policy do
   @doc """
   Creates a policy flow chart diagram for a single resource.
   """
-  @spec for_resource(resource :: module(), options :: options()) :: DiagramImpl.t()
+  @spec for_resource(resource :: module(), options :: options()) :: Flowchart.t()
   def for_resource(resource, options \\ []) when is_atom(resource) do
     options = Keyword.merge(@default_options, options)
 
@@ -81,7 +81,7 @@ defmodule AshDiagram.Data.Policy do
     Extension.construct_diagram(__MODULE__, extensions, diagram)
   end
 
-  @spec create_no_policies_diagram(module(), keyword()) :: DiagramImpl.t()
+  @spec create_no_policies_diagram(module(), keyword()) :: Flowchart.t()
   defp create_no_policies_diagram(resource, options) do
     title =
       options[:title] ||
@@ -99,7 +99,7 @@ defmodule AshDiagram.Data.Policy do
     create_diagram(title, List.flatten(entries))
   end
 
-  @spec create_policies_diagram(module(), [Policy.t()], keyword()) :: DiagramImpl.t()
+  @spec create_policies_diagram(module(), [Policy.t()], keyword()) :: Flowchart.t()
   defp create_policies_diagram(resource, policies, options) do
     title = options[:title] || IO.iodata_to_binary(["Policy Flow: ", inspect(resource)])
 
@@ -487,11 +487,11 @@ defmodule AshDiagram.Data.Policy do
     ]
   end
 
-  @spec create_diagram(String.t(), list()) :: DiagramImpl.t()
+  @spec create_diagram(String.t(), list()) :: Flowchart.t()
   defp create_diagram(title, entries) do
     extensions = []
 
-    Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
+    Extension.construct_diagram(__MODULE__, extensions, %Flowchart{
       title: title,
       direction: :top_bottom,
       entries: entries
@@ -603,7 +603,7 @@ defmodule AshDiagram.Data.Policy do
     |> String.replace("&", "&amp;")
   end
 
-  @spec simplify_diagram(DiagramImpl.t()) :: DiagramImpl.t()
+  @spec simplify_diagram(Flowchart.t()) :: Flowchart.t()
   defp simplify_diagram(diagram) do
     # Apply optimization pipeline similar to Ash's original implementation
     diagram
@@ -612,8 +612,11 @@ defmodule AshDiagram.Data.Policy do
     |> remove_empty_subgraphs()
   end
 
-  @spec remove_always_links(DiagramImpl.t()) :: DiagramImpl.t()
-  defp remove_always_links(%DiagramImpl{entries: entries} = diagram) do
+  @spec remove_always_links(Flowchart.t(), non_neg_integer()) :: Flowchart.t()
+  defp remove_always_links(diagram, max_iterations \\ 100)
+  defp remove_always_links(diagram, 0), do: diagram
+
+  defp remove_always_links(%Flowchart{entries: entries} = diagram, max_iterations) do
     # Find nodes with "always true" or "always false" labels
     always_nodes =
       Enum.filter(entries, fn entry ->
@@ -627,9 +630,13 @@ defmodule AshDiagram.Data.Policy do
     else
       # For each always node, find its target branch and redirect incoming links
       optimized_entries = optimize_always_nodes(entries, always_nodes)
-      remove_always_links(%{diagram | entries: optimized_entries})
 
-      # Recursively apply until no more changes
+      # Only recurse if changes were made
+      if optimized_entries == entries do
+        diagram
+      else
+        remove_always_links(%{diagram | entries: optimized_entries}, max_iterations - 1)
+      end
     end
   end
 
@@ -653,8 +660,12 @@ defmodule AshDiagram.Data.Policy do
     end)
   end
 
-  @spec collapse_constant_nodes(DiagramImpl.t()) :: DiagramImpl.t()
-  defp collapse_constant_nodes(%DiagramImpl{entries: entries} = diagram) do
+  @spec collapse_constant_nodes(Flowchart.t(), non_neg_integer()) ::
+          Flowchart.t()
+  defp collapse_constant_nodes(diagram, max_iterations \\ 100)
+  defp collapse_constant_nodes(diagram, 0), do: diagram
+
+  defp collapse_constant_nodes(%Flowchart{entries: entries} = diagram, max_iterations) do
     # Find nodes where True and False edges lead to same destination
     nodes_to_collapse = find_constant_nodes(entries)
 
@@ -665,9 +676,12 @@ defmodule AshDiagram.Data.Policy do
       {node_id, destination, label} = hd(nodes_to_collapse)
       optimized_entries = collapse_node(entries, node_id, destination, label)
 
-      collapse_constant_nodes(%{diagram | entries: optimized_entries})
-
-      # Recursively apply
+      # Only recurse if changes were made
+      if optimized_entries == entries do
+        diagram
+      else
+        collapse_constant_nodes(%{diagram | entries: optimized_entries}, max_iterations - 1)
+      end
     end
   end
 
@@ -701,8 +715,8 @@ defmodule AshDiagram.Data.Policy do
     |> add_direct_edges_to_node(node_id, destination, edge_label)
   end
 
-  @spec remove_empty_subgraphs(DiagramImpl.t()) :: DiagramImpl.t()
-  defp remove_empty_subgraphs(%DiagramImpl{entries: entries} = diagram) do
+  @spec remove_empty_subgraphs(Flowchart.t()) :: Flowchart.t()
+  defp remove_empty_subgraphs(%Flowchart{entries: entries} = diagram) do
     optimized_entries =
       Enum.reject(entries, fn entry ->
         case entry do

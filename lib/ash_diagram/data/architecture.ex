@@ -146,25 +146,17 @@ defmodule AshDiagram.Data.Architecture do
           entity_names :: %{Ash.Resource.t() => iodata()}
         ) :: Boundary.t()
   defp build_root_boundary(resources, entity_names) do
-    # Get all data layers and group them by their OTP application
     data_layer_apps = get_data_layer_applications(resources)
 
-    # Build OTP application boundaries (including data layer apps like :ash)
     all_apps = Enum.uniq(get_application_names(resources) ++ data_layer_apps)
 
     otp_app_boundaries = build_all_otp_application_boundaries(all_apps, resources, entity_names)
-
-    # Build external boundaries (shared across all applications)
-    external_boundaries = build_external_boundaries(resources)
-
-    # Collect all sub-boundaries
-    sub_boundaries = otp_app_boundaries ++ external_boundaries
 
     %Boundary{
       type: :system_boundary,
       alias: "beam",
       label: "BEAM",
-      entries: sub_boundaries
+      entries: otp_app_boundaries
     }
   end
 
@@ -178,19 +170,8 @@ defmodule AshDiagram.Data.Architecture do
       app_resources = Enum.filter(resources, &(Application.get_application(&1) == otp_app))
 
       entries =
-        cond do
-          otp_app == :ash ->
-            # For :ash app, include data layers that belong to it
-            build_ash_app_entries(resources)
-
-          length(app_resources) > 0 ->
-            # For user apps, include domains with resources
-            build_domain_boundaries(app_resources, entity_names)
-
-          true ->
-            # Empty app (shouldn't happen but just in case)
-            []
-        end
+        build_app_entries(resources, otp_app) ++
+          build_domain_boundaries(app_resources, entity_names)
 
       %Boundary{
         type: :system_boundary,
@@ -201,18 +182,15 @@ defmodule AshDiagram.Data.Architecture do
     end)
   end
 
-  @spec build_ash_app_entries(resources :: [Ash.Resource.t()]) :: [Element.t()]
-  defp build_ash_app_entries(resources) do
-    # Get data layers that belong to :ash application
-    ash_data_layers =
-      resources
-      |> Enum.map(&Ash.Resource.Info.data_layer/1)
-      |> Enum.uniq()
-      |> Enum.filter(fn data_layer ->
-        Application.get_application(data_layer) == :ash
-      end)
-
-    Enum.map(ash_data_layers, fn data_layer ->
+  @spec build_app_entries(resources :: [Ash.Resource.t()], otp_app :: Application.app()) :: [
+          Element.t()
+        ]
+  defp build_app_entries(resources, otp_app) do
+    resources
+    |> Enum.map(&Ash.Resource.Info.data_layer/1)
+    |> Enum.uniq()
+    |> Enum.filter(&(Application.get_application(&1) == otp_app))
+    |> Enum.map(fn data_layer ->
       data_layer_name = data_layer_name(data_layer)
 
       %Element{
@@ -253,44 +231,6 @@ defmodule AshDiagram.Data.Architecture do
         entries: resource_elements
       }
     end)
-  end
-
-  @spec build_external_boundaries(resources :: [Ash.Resource.t()]) :: [Boundary.t()]
-  defp build_external_boundaries(resources) do
-    # Get data layers that don't belong to any known OTP application
-    external_data_layers =
-      resources
-      |> Enum.map(&Ash.Resource.Info.data_layer/1)
-      |> Enum.uniq()
-      |> Enum.filter(fn data_layer ->
-        Application.get_application(data_layer) == nil
-      end)
-
-    if Enum.empty?(external_data_layers) do
-      []
-    else
-      external_elements =
-        Enum.map(external_data_layers, fn data_layer ->
-          data_layer_name = data_layer_name(data_layer)
-
-          %Element{
-            type: :system_db,
-            external?: true,
-            alias: String.downcase(data_layer_name),
-            label: data_layer_name,
-            description: "#{data_layer_name} (external)"
-          }
-        end)
-
-      [
-        %Boundary{
-          type: :system_boundary,
-          alias: "external",
-          label: "External Systems",
-          entries: external_elements
-        }
-      ]
-    end
   end
 
   @spec build_resource_relationship(
