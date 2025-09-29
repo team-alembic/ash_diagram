@@ -38,7 +38,7 @@ defmodule AshDiagram.MixProject do
     # styler:sort
     [
       {:ash, "~> 3.5 and >= 3.5.34"},
-      {:clarity, "~> 0.1.2", optional: true},
+      {:clarity, "~> 0.2.0", optional: true},
       # Development
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

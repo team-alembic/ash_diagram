@@ -4,99 +4,84 @@ defmodule AshDiagram.ClarityIntrospectorTest do
   alias AshDiagram.ClarityIntrospector
   alias AshDiagram.Flow.Domain
   alias AshDiagram.Flow.User
-  alias Clarity.Vertex
+  alias Clarity.Vertex.Application
   alias Clarity.Vertex.Ash.Domain
   alias Clarity.Vertex.Ash.Resource
+  alias Clarity.Vertex.Content
 
-  describe inspect(&ClarityIntrospector.dependencies/2) do
-    test "returns correct dependencies" do
-      deps = ClarityIntrospector.dependencies()
-      assert deps == [Clarity.Introspector.Application, Clarity.Introspector.Ash.Domain]
+  describe inspect(&ClarityIntrospector.source_vertex_types/0) do
+    test "returns correct source vertex types" do
+      types = ClarityIntrospector.source_vertex_types()
+      assert types == [Application, Domain, Resource]
     end
   end
 
-  describe inspect(&ClarityIntrospector.introspect/2) do
-    setup do
-      graph = :digraph.new()
-
-      {:ok, graph: graph}
-    end
-
-    test "processes empty graph without errors", %{graph: graph} do
-      initial_vertices = :digraph.vertices(graph)
-      result = ClarityIntrospector.introspect(graph)
-
-      assert :digraph.vertices(result) == initial_vertices
-    end
-
-    test "resource vertex generates policy diagram", %{graph: graph} do
+  describe inspect(&ClarityIntrospector.introspect_vertex/2) do
+    test "resource vertex generates policy diagram" do
       resource_vertex = %Resource{resource: User}
-      :digraph.add_vertex(graph, resource_vertex, resource_vertex)
+      result = ClarityIntrospector.introspect_vertex(resource_vertex, nil)
 
-      ClarityIntrospector.introspect(graph)
+      assert {:ok,
+              [
+                {:vertex, policy_vertex},
+                {:edge, ^resource_vertex, policy_vertex, :content}
+              ]} = result
 
-      vertices = :digraph.vertices(graph)
-      assert length(vertices) == 2
-
-      assert %Vertex.Content{name: "Policy Diagram", content: {:mermaid, _}} =
-               policy_vertex =
-               Enum.find(vertices, &match?(%Vertex.Content{id: "policy_diagram_" <> _}, &1))
-
-      assert [^resource_vertex, ^policy_vertex] = :digraph.get_short_path(graph, resource_vertex, policy_vertex)
+      assert %Content{name: "Policy Diagram", content: {:mermaid, _}} = policy_vertex
+      assert policy_vertex.id == "policy_diagram_#{User}"
     end
 
-    test "domain vertex generates class, ER, and architecture diagrams", %{graph: graph} do
-      domain_vertex = %Domain{domain: Domain}
-      :digraph.add_vertex(graph, domain_vertex, domain_vertex)
+    test "domain vertex generates class, ER, and architecture diagrams" do
+      domain_vertex = %Domain{domain: AshDiagram.Flow.Domain}
+      result = ClarityIntrospector.introspect_vertex(domain_vertex, nil)
 
-      ClarityIntrospector.introspect(graph)
+      assert {:ok,
+              [
+                {:vertex, er_vertex},
+                {:vertex, class_vertex},
+                {:vertex, arch_vertex},
+                {:edge, ^domain_vertex, er_vertex, :content},
+                {:edge, ^domain_vertex, class_vertex, :content},
+                {:edge, ^domain_vertex, arch_vertex, :content}
+              ]} = result
 
-      vertices = :digraph.vertices(graph)
-      assert length(vertices) == 4
+      assert %Content{name: "ER Diagram", content: {:mermaid, _}} = er_vertex
+      assert %Content{name: "Class Diagram", content: {:mermaid, _}} = class_vertex
+      assert %Content{name: "Architecture Diagram", content: {:mermaid, _}} = arch_vertex
 
-      domain_name = "#{Domain}"
-
-      assert %Vertex.Content{name: "ER Diagram", content: {:mermaid, _}} =
-               er_vertex =
-               Enum.find(vertices, &match?(%Vertex.Content{id: "er_diagram_" <> ^domain_name}, &1))
-
-      assert %Vertex.Content{name: "Class Diagram", content: {:mermaid, _}} =
-               class_vertex =
-               Enum.find(vertices, &match?(%Vertex.Content{id: "class_diagram_" <> ^domain_name}, &1))
-
-      assert %Vertex.Content{name: "Architecture Diagram", content: {:mermaid, _}} =
-               arch_vertex =
-               Enum.find(vertices, &match?(%Vertex.Content{id: "architecture_diagram_" <> ^domain_name}, &1))
-
-      assert [^domain_vertex, ^er_vertex] = :digraph.get_short_path(graph, domain_vertex, er_vertex)
-      assert [^domain_vertex, ^class_vertex] = :digraph.get_short_path(graph, domain_vertex, class_vertex)
-      assert [^domain_vertex, ^arch_vertex] = :digraph.get_short_path(graph, domain_vertex, arch_vertex)
+      domain_name = "#{AshDiagram.Flow.Domain}"
+      assert er_vertex.id == "er_diagram_#{domain_name}"
+      assert class_vertex.id == "class_diagram_#{domain_name}"
+      assert arch_vertex.id == "architecture_diagram_#{domain_name}"
     end
 
-    test "application vertex generates ER, class, and architecture diagrams", %{graph: graph} do
-      app_vertex = %Vertex.Application{app: :ash_diagram, description: "Test app", version: "1.0.0"}
-      :digraph.add_vertex(graph, app_vertex, app_vertex)
+    test "application vertex generates ER, class, and architecture diagrams" do
+      app_vertex = %Application{app: :ash_diagram, description: "Test app", version: "1.0.0"}
+      result = ClarityIntrospector.introspect_vertex(app_vertex, nil)
 
-      ClarityIntrospector.introspect(graph)
+      assert {:ok,
+              [
+                {:vertex, er_vertex},
+                {:vertex, class_vertex},
+                {:vertex, arch_vertex},
+                {:edge, ^app_vertex, er_vertex, :content},
+                {:edge, ^app_vertex, class_vertex, :content},
+                {:edge, ^app_vertex, arch_vertex, :content}
+              ]} = result
 
-      vertices = :digraph.vertices(graph)
-      assert length(vertices) == 4
+      assert %Content{name: "ER Diagram", content: {:mermaid, _}} = er_vertex
+      assert %Content{name: "Class Diagram", content: {:mermaid, _}} = class_vertex
+      assert %Content{name: "Architecture Diagram", content: {:mermaid, _}} = arch_vertex
 
-      assert %Vertex.Content{name: "ER Diagram", content: {:mermaid, _}} =
-               er_vertex =
-               Enum.find(vertices, &match?(%Vertex.Content{id: "er_diagram_ash_diagram"}, &1))
+      assert er_vertex.id == "er_diagram_ash_diagram"
+      assert class_vertex.id == "class_diagram_ash_diagram"
+      assert arch_vertex.id == "architecture_diagram_ash_diagram"
+    end
 
-      assert %Vertex.Content{name: "Class Diagram", content: {:mermaid, _}} =
-               class_vertex =
-               Enum.find(vertices, &match?(%Vertex.Content{id: "class_diagram_ash_diagram"}, &1))
-
-      assert %Vertex.Content{name: "Architecture Diagram", content: {:mermaid, _}} =
-               arch_vertex =
-               Enum.find(vertices, &match?(%Vertex.Content{id: "architecture_diagram_ash_diagram"}, &1))
-
-      assert [^app_vertex, ^er_vertex] = :digraph.get_short_path(graph, app_vertex, er_vertex)
-      assert [^app_vertex, ^class_vertex] = :digraph.get_short_path(graph, app_vertex, class_vertex)
-      assert [^app_vertex, ^arch_vertex] = :digraph.get_short_path(graph, app_vertex, arch_vertex)
+    test "application vertex with no Ash domains returns empty list" do
+      app_vertex = %Application{app: :no_ash_app, description: "Test app", version: "1.0.0"}
+      result = ClarityIntrospector.introspect_vertex(app_vertex, nil)
+      assert result == {:ok, []}
     end
   end
 end
