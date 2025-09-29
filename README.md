@@ -247,6 +247,190 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [Mermaid.js](https://mermaid.js.org/)
 - [C4 Model](https://c4model.com/)
 
+## Example Diagrams
+
+Examples taken from the [`tunez`](https://github.com/sevenseacat/tunez) starter
+app of the [Ash Framework](https://pragprog.com/titles/ldash/ash-framework/)
+book.
+
+<!-- tabs-open -->
+
+### Class
+
+```mermaid
+classDiagram
+  class `Tunez.Music.Album`["Music.Album"] {
+    +UUID id
+    +String name
+    +Integer year_released
+    +?String cover_image_url
+    +read() : read~Music.Album~
+    +destroy() : destroy~Music.Album~
+    +create(?Map[] tracks) : create~Music.Album~
+    +update(?Map[] tracks) : update~Music.Album~
+  }
+  class `Tunez.Music.Artist`["Music.Artist"] {
+    +UUID id
+    +String name
+    +?String[] previous_names
+    +?String biography
+    +UtcDatetimeUsec inserted_at
+    +UtcDatetimeUsec updated_at
+    +Boolean followed_by_me
+    +unknown album_count
+    +unknown latest_album_year_released
+    +unknown follower_count
+    +read() : read~Music.Artist~
+    +create() : create~Music.Artist~
+    +search(?CiString query) : read~Music.Artist~
+    +update() : update~Music.Artist~
+    +destroy() : destroy~Music.Artist~
+  }
+  class `Tunez.Music.ArtistFollower`["Music.ArtistFollower"] {
+    +read() : read~Music.ArtistFollower~
+    +for_artist(UUID artist_id) : read~Music.ArtistFollower~
+    +create() : create~Music.ArtistFollower~
+    +destroy(UUID artist_id) : destroy~Music.ArtistFollower~
+  }
+  class `Tunez.Music.Track`["Music.Track"] {
+    +UUID id
+    +String name
+    +Integer number
+    +String duration
+    +destroy() : destroy~Music.Track~
+    +read() : read~Music.Track~
+    +create(String duration) : create~Music.Track~
+    +update(String duration) : update~Music.Track~
+  }
+  `Tunez.Music.Album` "*" o--* "0..1" `Tunez.Music.Track`
+  `Tunez.Music.Album` "0..1" *--o "*" `Tunez.Music.Artist`
+
+```
+
+
+### Entity Relationship
+
+```mermaid
+erDiagram
+  "Tunez.Music.Album"["Music.Album"] {
+    UUID id
+    String name
+    Integer year_released
+    String﹖ cover_image_url
+  }
+  "Tunez.Music.Artist"["Music.Artist"] {
+    UUID id
+    String name
+    String[]﹖ previous_names
+    String﹖ biography
+    UtcDatetimeUsec inserted_at
+    UtcDatetimeUsec updated_at
+    Boolean followed_by_me
+    unknown album_count
+    unknown latest_album_year_released
+    unknown follower_count
+  }
+  "Tunez.Music.ArtistFollower"["Music.ArtistFollower"] {
+  }
+  "Tunez.Music.Track"["Music.Track"] {
+    UUID id
+    String name
+    Integer number
+    String duration
+  }
+  "Tunez.Music.Album" }o--o| "Tunez.Music.Track" : ""
+  "Tunez.Music.Album" |o--o{ "Tunez.Music.Artist" : ""
+
+```
+
+### C4 Architecture
+
+```mermaid
+C4Context
+
+  System_Boundary("beam", "BEAM") {
+    System_Boundary("tunez", "tunez Application") {
+      System_Boundary("tunez_accounts", "Accounts") {
+        System("tunez_accounts_token", "Accounts.Token", "Resource with 12 actions, 0 relationships")
+        System("tunez_accounts_user", "Accounts.User", "Resource with 14 actions, 2 relationships")
+        System("tunez_accounts_notification", "Accounts.Notification", "Resource with 4 actions, 2 relationships")
+      }
+      System_Boundary("tunez_music", "Music") {
+        System("tunez_music_artist", "Music.Artist", "Resource with 5 actions, 5 relationships")
+        System("tunez_music_album", "Music.Album", "Resource with 4 actions, 5 relationships")
+        System("tunez_music_track", "Music.Track", "Resource with 4 actions, 1 relationships")
+        System("tunez_music_artist_follower", "Music.ArtistFollower", "Resource with 4 actions, 2 relationships")
+      }
+    }
+    System_Boundary("ash_postgres", "ash_postgres Application") {
+      SystemDb("", "", "")
+    }
+  }
+  Rel("tunez_music_album", "tunez_music_track", "tracks", "has_many relationship")
+  Rel("tunez_music_artist", "tunez_music_album", "albums", "has_many relationship")
+  Rel("tunez_accounts_token", "", "uses", "Stores data")
+  Rel("tunez_accounts_user", "", "uses", "Stores data")
+  Rel("tunez_accounts_notification", "", "uses", "Stores data")
+  Rel("tunez_music_artist", "", "uses", "Stores data")
+  Rel("tunez_music_album", "", "uses", "Stores data")
+  Rel("tunez_music_track", "", "uses", "Stores data")
+  Rel("tunez_music_artist_follower", "", "uses", "Stores data")
+
+```
+
+### Resource Policy
+
+```mermaid
+---
+title: "Policy Flow: Tunez.Music.Album"
+---
+flowchart TD
+  start((Policy Evaluation Start))
+  subgraph at_least_one_policy [at least one policy applies]
+    at_least_one_policy_check{"actor.role == :admin or action.type == :read or action == :create or action.type in [:update, :destroy]"}
+  end
+  0_conditions{"actor.role == :admin"}
+  0_checks_0{"always true"}
+  1_conditions{"action.type == :read"}
+  1_checks_0{"always true"}
+  2_conditions{"action == :create"}
+  2_checks_0{"actor.role == :editor"}
+  3_conditions{"action.type in [:update, :destroy]"}
+  3_checks_0{"can_manage_album?"}
+  subgraph results [Results]
+    authorized((Authorized))
+    forbidden((Forbidden))
+  end
+  0_conditions -->|True| 0_checks_0
+  0_conditions -->|False| 1_conditions
+  0_checks_0 -->|True| authorized
+  0_checks_0 -->|False| 1_conditions
+  1_conditions -->|True| 1_checks_0
+  1_conditions -->|False| 2_conditions
+  1_checks_0 -->|True| 2_conditions
+  1_checks_0 -->|False| forbidden
+  2_conditions -->|True| 2_checks_0
+  2_conditions -->|False| 3_conditions
+  2_checks_0 -->|True| 3_conditions
+  2_checks_0 -->|False| forbidden
+  3_conditions -->|True| 3_checks_0
+  3_conditions -->|False| authorized
+  3_checks_0 -->|True| authorized
+  3_checks_0 -->|False| forbidden
+  start --> at_least_one_policy_check
+  at_least_one_policy_check -->|False| forbidden
+  at_least_one_policy_check -->|True| 0_conditions
+  classDef authorized fill:#e8f5e8,stroke:#4CAF50,stroke-width:2px
+  classDef forbidden fill:#ffebee,stroke:#f44336,stroke-width:2px
+  classDef condition fill:#e3f2fd,stroke:#2196F3
+  class authorized authorized
+  class forbidden forbidden
+  class start condition
+
+```
+
+<!-- tabs-close -->
+
 ## License
 
 Copyright 2025 Alembic Pty Ltd

@@ -12,6 +12,8 @@ defmodule AshDiagram do
 
   alias AshDiagram.Renderer
 
+  @external_resource readme_path
+
   @typedoc "Module implementing the `AshDiagram.Renderer` behaviour."
   @type implementation() :: module()
 
