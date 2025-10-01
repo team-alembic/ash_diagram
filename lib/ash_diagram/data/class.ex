@@ -333,12 +333,17 @@ defmodule AshDiagram.Data.Class do
   defp pointer_type(%Relationships.HasOne{}), do: {:aggregation, :composition}
   defp pointer_type(%Relationships.ManyToMany{}), do: {:association, :association}
 
-  @spec common_prefix(parts :: [module()]) :: [String.t()]
-  defp common_prefix(parts)
+  @spec common_prefix(modules :: [module()]) :: [String.t()]
+  defp common_prefix(modules)
   defp common_prefix([]), do: []
 
-  defp common_prefix(parts) do
-    parts
+  defp common_prefix([module]) do
+    parts = Module.split(module)
+    Enum.take(parts, length(parts) - 1)
+  end
+
+  defp common_prefix(modules) do
+    modules
     |> Enum.map(&Module.split/1)
     |> Enum.reduce(fn list, acc ->
       acc

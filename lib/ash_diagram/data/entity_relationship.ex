@@ -226,10 +226,15 @@ defmodule AshDiagram.Data.EntityRelationship do
   defp cardinality(%Relationships.BelongsTo{}), do: {:exactly_one, :zero_or_more}
   defp cardinality(%Relationships.HasMany{}), do: {:zero_or_more, :zero_or_one}
   defp cardinality(%Relationships.HasOne{}), do: {:exactly_one, :zero_or_one}
+  defp cardinality(%Relationships.ManyToMany{}), do: {:zero_or_more, :zero_or_more}
 
   @spec common_prefix(parts :: [module()]) :: [String.t()]
   defp common_prefix(parts)
-  defp common_prefix([]), do: []
+
+  defp common_prefix([module]) do
+    parts = Module.split(module)
+    Enum.take(parts, length(parts) - 1)
+  end
 
   defp common_prefix(parts) do
     parts

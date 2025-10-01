@@ -5,13 +5,14 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
   import AshDiagram.VisualAssertions
 
   alias AshDiagram.Data.EntityRelationship
+  alias AshDiagram.Flow.User
 
   doctest EntityRelationship
 
   describe inspect(&EntityRelationship.for_resources/1) do
     @tag :tmp_dir
     test "creates diagram from resources", %{tmp_dir: tmp_dir} do
-      diagram = EntityRelationship.for_resources([AshDiagram.Flow.User, AshDiagram.Flow.Org])
+      diagram = EntityRelationship.for_resources([User, AshDiagram.Flow.Org])
 
       assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
                """
@@ -43,6 +44,23 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
         fixture_path("entity_relationship.png"),
         diff_path
       )
+    end
+
+    test "creates diagram from resource" do
+      diagram = EntityRelationship.for_resources([User])
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
+               """
+               erDiagram
+                 "dummy"["♡"]
+                 "AshDiagram.Flow.User"["User"] {
+                   UUID id
+                   String﹖ first_name
+                   String﹖ last_name
+                   String﹖ email
+                 }
+                 "AshDiagram.Flow.Org" }o--o| "AshDiagram.Flow.User" : ""
+               """
     end
   end
 end
