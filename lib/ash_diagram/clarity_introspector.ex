@@ -112,7 +112,7 @@ defmodule AshDiagram.ClarityIntrospector do
   @spec generate_app_er_diagram(Application.app()) :: String.t()
   defp generate_app_er_diagram(app) do
     [app]
-    |> EntityRelationship.for_applications()
+    |> EntityRelationship.for_applications(show_private?: true)
     |> AshDiagram.EntityRelationship.compose()
     |> IO.iodata_to_binary()
   end
@@ -121,7 +121,7 @@ defmodule AshDiagram.ClarityIntrospector do
   @spec generate_app_class_diagram(Application.app()) :: String.t()
   defp generate_app_class_diagram(app) do
     [app]
-    |> Class.for_applications()
+    |> Class.for_applications(show_private?: true)
     |> AshDiagram.Class.compose()
     |> IO.iodata_to_binary()
   end
@@ -130,7 +130,7 @@ defmodule AshDiagram.ClarityIntrospector do
   @spec generate_app_architecture_diagram(Application.app()) :: String.t()
   defp generate_app_architecture_diagram(app) do
     [app]
-    |> Architecture.for_applications()
+    |> Architecture.for_applications(show_private?: true)
     |> AshDiagram.C4.compose()
     |> IO.iodata_to_binary()
   end
@@ -139,7 +139,7 @@ defmodule AshDiagram.ClarityIntrospector do
   @spec generate_domain_er_diagram(Ash.Domain.t()) :: String.t()
   defp generate_domain_er_diagram(domain) do
     [domain]
-    |> EntityRelationship.for_domains()
+    |> EntityRelationship.for_domains(show_private?: true)
     |> AshDiagram.EntityRelationship.compose()
     |> IO.iodata_to_binary()
   end
@@ -148,7 +148,7 @@ defmodule AshDiagram.ClarityIntrospector do
   @spec generate_domain_class_diagram(Ash.Domain.t()) :: String.t()
   defp generate_domain_class_diagram(domain) do
     [domain]
-    |> Class.for_domains()
+    |> Class.for_domains(show_private?: true)
     |> AshDiagram.Class.compose()
     |> IO.iodata_to_binary()
   end
@@ -157,7 +157,7 @@ defmodule AshDiagram.ClarityIntrospector do
   @spec generate_domain_architecture_diagram(Ash.Domain.t()) :: String.t()
   defp generate_domain_architecture_diagram(domain) do
     [domain]
-    |> Architecture.for_domains()
+    |> Architecture.for_domains(show_private?: true)
     |> AshDiagram.C4.compose()
     |> IO.iodata_to_binary()
   end
