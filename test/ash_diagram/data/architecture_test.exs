@@ -5,6 +5,7 @@ defmodule AshDiagram.Data.ArchitectureTest do
   import AshDiagram.VisualAssertions
 
   alias AshDiagram.Data.Architecture
+  alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
 
   doctest Architecture
@@ -12,7 +13,7 @@ defmodule AshDiagram.Data.ArchitectureTest do
   describe inspect(&Architecture.for_resources/1) do
     @tag :tmp_dir
     test "creates architecture diagram from resources", %{tmp_dir: tmp_dir} do
-      diagram = Architecture.for_resources([User, AshDiagram.Flow.Org])
+      diagram = Architecture.for_resources([User, Org])
 
       assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
                """
@@ -77,6 +78,39 @@ defmodule AshDiagram.Data.ArchitectureTest do
       assert mermaid_output =~ "C4Context"
       # The application name should be "ash_diagram" with proper OTP app name
       assert mermaid_output =~ "ash_diagram"
+    end
+  end
+
+  describe "relationship filtering" do
+    test "only includes relationships between resources in the diagram" do
+      # When we create a diagram with only User (not Org),
+      # it should NOT include the relationship to Org
+      diagram = Architecture.for_resources([User])
+      output = diagram |> AshDiagram.compose() |> IO.iodata_to_binary()
+
+      # Should include User
+      assert output =~ ~s[System("ash_diagram_flow_user", "User",]
+
+      # Should NOT include any relationships to org (which is not in the diagram)
+      refute output =~ "ash_diagram_flow_org"
+      refute output =~ ~s[Rel("ash_diagram_flow_user", "ash_diagram_flow_org")]
+
+      # Should still include the data layer relationship
+      assert output =~ ~s[Rel("ash_diagram_flow_user", "mnesia", "uses", "Stores data")]
+    end
+
+    test "includes relationships when both resources are in the diagram" do
+      # When we include both User and Org, relationships should be present
+      diagram = Architecture.for_resources([User, Org])
+      output = diagram |> AshDiagram.compose() |> IO.iodata_to_binary()
+
+      # Should include both resources
+      assert output =~ ~s[System("ash_diagram_flow_user", "User",]
+      assert output =~ ~s[System("ash_diagram_flow_org", "Org",]
+
+      # Should include relationships between them
+      assert output =~ ~s[Rel("ash_diagram_flow_user", "ash_diagram_flow_org", "org", "belongs_to relationship")]
+      assert output =~ ~s[Rel("ash_diagram_flow_org", "ash_diagram_flow_user", "users", "has_many relationship")]
     end
   end
 

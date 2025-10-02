@@ -353,15 +353,18 @@ defmodule AshDiagram.Data.Architecture do
           access_functions :: {function(), function(), function(), function()}
         ) :: [Relationship.t()]
   defp build_nested_relationships(resources, entity_names, {_, _, _, relationship_fun}) do
-    # Resource-to-resource relationships
+    resources_set = MapSet.new(resources)
+
     resource_relationships =
       resources
       |> Enum.flat_map(relationship_fun)
+      |> Enum.filter(fn relationship ->
+        MapSet.member?(resources_set, relationship.destination)
+      end)
       |> Enum.sort()
       |> Enum.map(&build_resource_relationship(&1, entity_names))
       |> Enum.uniq()
 
-    # Resource-to-data-layer relationships
     data_relationships =
       Enum.map(resources, fn resource ->
         data_layer = Ash.Resource.Info.data_layer(resource)
@@ -427,6 +430,7 @@ defmodule AshDiagram.Data.Architecture do
   defp data_layer_name(data_layer) do
     data_layer
     |> Module.split()
+    |> Enum.reject(&match?("DataLayer", &1))
     |> List.last()
     |> String.replace("DataLayer", "")
   end
@@ -437,11 +441,17 @@ defmodule AshDiagram.Data.Architecture do
   @spec relationship_description(Relationships.relationship()) :: String.t()
   defp relationship_description(%{type: type}), do: "#{type} relationship"
 
-  @spec common_prefix([module()]) :: [String.t()]
+  @spec common_prefix(modules :: [module()]) :: [String.t()]
+  defp common_prefix(modules)
   defp common_prefix([]), do: []
 
-  defp common_prefix(parts) do
-    parts
+  defp common_prefix([module]) do
+    parts = Module.split(module)
+    Enum.take(parts, length(parts) - 1)
+  end
+
+  defp common_prefix(modules) do
+    modules
     |> Enum.map(&Module.split/1)
     |> Enum.reduce(fn list, acc ->
       acc
