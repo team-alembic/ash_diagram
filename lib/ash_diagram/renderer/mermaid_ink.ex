@@ -122,7 +122,13 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
 
     @spec encode(diagram :: iodata()) :: String.t()
     defp encode(diagram) do
-      json = JSON.encode!(%{code: IO.iodata_to_binary(diagram)})
+      json = JSON.encode!(%{
+        "autoSync" => true,
+        "code" => IO.iodata_to_binary(diagram),
+        "mermaid" => JSON.encode!(%{"theme" => "default"}),
+        "updateDiagram" => true,
+        "updateEditor" => true
+      })
 
       z = :zlib.open()
       :ok = :zlib.deflateInit(z, :best_compression)
