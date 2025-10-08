@@ -20,13 +20,14 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                  "dummy"["♡"]
                  "AshDiagram.Flow.Org"["Org"] {
                    UUID id
-                   String﹖ name
+                   String？ name
                  }
                  "AshDiagram.Flow.User"["User"] {
                    UUID id
-                   String﹖ first_name
-                   String﹖ last_name
-                   String﹖ email
+                   String？ first_name
+                   String？ last_name
+                   String？ email
+                   Boolean？ approved？
                  }
                  "AshDiagram.Flow.Org" }o--o| "AshDiagram.Flow.User" : ""
                """
@@ -55,9 +56,10 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                  "dummy"["♡"]
                  "AshDiagram.Flow.User"["User"] {
                    UUID id
-                   String﹖ first_name
-                   String﹖ last_name
-                   String﹖ email
+                   String？ first_name
+                   String？ last_name
+                   String？ email
+                   Boolean？ approved？
                  }
                  "AshDiagram.Flow.Org" }o--o| "AshDiagram.Flow.User" : ""
                """

@@ -316,13 +316,13 @@ erDiagram
     UUID id
     String name
     Integer year_released
-    String﹖ cover_image_url
+    String？ cover_image_url
   }
   "Tunez.Music.Artist"["Music.Artist"] {
     UUID id
     String name
-    String[]﹖ previous_names
-    String﹖ biography
+    String[]？ previous_names
+    String？ biography
     UtcDatetimeUsec inserted_at
     UtcDatetimeUsec updated_at
     Boolean followed_by_me

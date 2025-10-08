@@ -102,8 +102,9 @@ defmodule AshDiagram.Flow.User do
       """,
       public?: true
 
-    attribute :approved, :boolean do
+    attribute :approved?, :boolean do
       description "Is the user approved?"
+      public? true
     end
 
     attribute :role, :atom do

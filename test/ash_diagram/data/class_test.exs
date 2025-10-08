@@ -33,6 +33,7 @@ defmodule AshDiagram.Data.ClassTest do
                    +?String first_name
                    +?String last_name
                    +?String email
+                   +?Boolean approved?
                    +destroy() : destroy~User~
                    +read() : read~User~
                    +for_org(UUID org) : read~User~
@@ -73,6 +74,7 @@ defmodule AshDiagram.Data.ClassTest do
                    +?String first_name
                    +?String last_name
                    +?String email
+                   +?Boolean approved?
                    +destroy() : destroy~User~
                    +read() : read~User~
                    +for_org(UUID org) : read~User~
