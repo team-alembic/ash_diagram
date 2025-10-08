@@ -2,7 +2,7 @@ defmodule AshDiagram.Util do
   @moduledoc false
 
   @doc """
-  Santitize a string that can't be escaped and use their closest visual
+  Sanitize a string that can't be escaped and use their closest visual
   UTF-8 counterpart where it makes sense.
   """
   @spec sanitize_non_escapable_string(
