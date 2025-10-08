@@ -161,18 +161,18 @@ defmodule AshDiagram.Data.EntityRelationship do
                 attribute_fun.(resource) do
             %DiagramImpl.Attribute{
               type: compose_type(type, allow_nil?),
-              name: Atom.to_string(name)
+              name: sanitize_property_name(name)
             }
           end
 
         calculations =
           for %Ash.Resource.Calculation{name: name, type: type} <- calculation_fun.(resource) do
-            %DiagramImpl.Attribute{type: compose_type(type), name: Atom.to_string(name)}
+            %DiagramImpl.Attribute{type: compose_type(type), name: sanitize_property_name(name)}
           end
 
         aggregates =
           for %Ash.Resource.Aggregate{name: name, type: type} <- aggregate_fun.(resource) do
-            %DiagramImpl.Attribute{type: compose_type(type), name: Atom.to_string(name)}
+            %DiagramImpl.Attribute{type: compose_type(type), name: sanitize_property_name(name)}
           end
 
         %DiagramImpl.Entity{
@@ -215,7 +215,7 @@ defmodule AshDiagram.Data.EntityRelationship do
 
   @spec compose_type(type :: Ash.Type.t(), allow_nil? :: boolean()) :: iodata()
   defp compose_type(type, allow_nil? \\ false)
-  defp compose_type(type, true), do: [compose_type(type), "﹖"]
+  defp compose_type(type, true), do: [compose_type(type), "？"]
   defp compose_type({:array, inner_type}, false), do: [compose_type(inner_type), "[]"]
   defp compose_type(nil, false), do: "unknown"
   defp compose_type(module, false), do: module |> Module.split() |> List.last()
@@ -262,4 +262,13 @@ defmodule AshDiagram.Data.EntityRelationship do
   end
 
   defp normalize_relationship(relationship), do: relationship
+
+  @spec sanitize_property_name(name :: atom()) :: String.t()
+  def sanitize_property_name(name) when is_atom(name) do
+    name
+    |> to_string()
+    |> AshDiagram.Util.sanitize_non_escapable_string(
+      ~r/[^A-Za-z0-9_\-\[\]\(\)\*\x{00C0}-\x{FFFF}]/u
+    )
+  end
 end
