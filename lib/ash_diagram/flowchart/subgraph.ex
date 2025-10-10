@@ -7,7 +7,7 @@ defmodule AshDiagram.Flowchart.Subgraph do
   alias AshDiagram.Flowchart.Node
 
   @directions %{
-    top_bottom: "TD",
+    top_bottom: "TB",
     bottom_top: "BT",
     left_right: "LR",
     right_left: "RL"
