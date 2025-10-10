@@ -33,7 +33,8 @@ defmodule AshDiagram.MixProject do
           AshDiagram.ClarityContent.ErDiagram,
           AshDiagram.ClarityContent.ClassDiagram,
           AshDiagram.ClarityContent.ArchitectureDiagram,
-          AshDiagram.ClarityContent.PolicyDiagram
+          AshDiagram.ClarityContent.PolicyDiagram,
+          AshDiagram.ClarityContent.PolicySimulation
         ]
       ]
     ]
@@ -42,7 +43,8 @@ defmodule AshDiagram.MixProject do
   defp deps do
     # styler:sort
     [
-      {:ash, "~> 3.5 and >= 3.5.34"},
+      # TODO: Go back to released version
+      {:ash, "~> 3.5 and >= 3.5.34", github: "ash-project/ash", override: true},
       {:clarity, "~> 0.3.0", optional: true},
       # Development
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
