@@ -23,11 +23,13 @@ defmodule AshDiagram.Flowchart do
 
   @type config() :: map()
 
+  @type entry() :: Node.t() | Edge.t() | Subgraph.t() | Style.t()
+
   @type t() :: %__MODULE__{
           title: iodata() | nil,
           config: config() | nil,
           direction: direction() | nil,
-          entries: [Node.t() | Edge.t() | Subgraph.t() | Style.t()]
+          entries: [entry()]
         }
   @enforce_keys [:entries]
   defstruct [:entries, title: nil, config: nil, direction: nil]
