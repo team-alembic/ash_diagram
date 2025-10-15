@@ -16,6 +16,7 @@ jobs:
       conventional-commit: false
       tenants: false
       spark-formatter: false
+      spark-cheat-sheets: false
     permissions:
       id-token: write
       contents: write
