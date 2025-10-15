@@ -312,9 +312,8 @@ defmodule AshDiagram.Data.Policy do
 
   @spec create_check_nodes(Policy.t(), non_neg_integer()) :: [Node.t()]
   defp create_check_nodes(policy, policy_index) do
-    checks = List.wrap(policy.policies || [])
-
-    checks
+    policy.policies
+    |> List.wrap()
     |> Enum.with_index()
     |> Enum.map(fn {check, check_index} ->
       description = describe_check(check)

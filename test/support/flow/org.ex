@@ -39,6 +39,15 @@ defmodule AshDiagram.Flow.Org do
     end
   end
 
+  field_policies do
+    # Name field has complex authorization logic
+    field_policy :name do
+      authorize_if actor_attribute_equals(:role, :admin)
+      authorize_if expr(actor(:role) == :manager and relates_to_actor_via(:members))
+      authorize_if expr(action_type(:read) and actor_present())
+    end
+  end
+
   identities do
     identity :unique_name, [:name], pre_check_with: AshDiagram.Flow.Domain
   end

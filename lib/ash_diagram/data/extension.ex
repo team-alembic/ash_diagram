@@ -11,6 +11,7 @@ defmodule AshDiagram.Data.Extension do
           | AshDiagram.Data.Class
           | AshDiagram.Data.Policy
           | AshDiagram.Data.Architecture
+          | AshDiagram.Data.PolicySimulation
 
   @doc """
   Checks if the extension creator supports the given creator.

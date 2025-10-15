@@ -33,7 +33,8 @@ defmodule AshDiagram.MixProject do
           AshDiagram.ClarityContent.ErDiagram,
           AshDiagram.ClarityContent.ClassDiagram,
           AshDiagram.ClarityContent.ArchitectureDiagram,
-          AshDiagram.ClarityContent.PolicyDiagram
+          AshDiagram.ClarityContent.PolicyDiagram,
+          AshDiagram.ClarityContent.PolicySimulation
         ]
       ]
     ]
@@ -42,10 +43,11 @@ defmodule AshDiagram.MixProject do
   defp deps do
     # styler:sort
     [
-      {:ash, "~> 3.5 and >= 3.5.34"},
+      {:ash, "~> 3.7"},
       {:clarity, "~> 0.3.0", optional: true},
       # Development
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:crux, "~> 0.1.0"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:doctest_formatter, "~> 0.4.0", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.18", only: [:dev, :test]},

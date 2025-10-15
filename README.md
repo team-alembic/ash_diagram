@@ -347,7 +347,6 @@ erDiagram
 
 ```mermaid
 C4Context
-
   System_Boundary("beam", "BEAM") {
     System_Boundary("tunez", "tunez Application") {
       System_Boundary("tunez_accounts", "Accounts") {
@@ -381,9 +380,6 @@ C4Context
 ### Resource Policy
 
 ```mermaid
----
-title: "Policy Flow: Tunez.Music.Album"
----
 flowchart TD
   start((Policy Evaluation Start))
   subgraph at_least_one_policy [at least one policy applies]
@@ -427,6 +423,65 @@ flowchart TD
   class forbidden forbidden
   class start condition
 
+```
+
+### Resource Policy Simulation
+
+```mermaid
+flowchart TD
+  start((Start))
+  authorized((Authorized))
+  check_{"'action == :archive'"}
+  check_l{"'action.type == :create'"}
+  check_ll{"'action.type == :destroy'"}
+  check_lll{"'action.type == :read'"}
+  check_llll{"'action.type == :update'"}
+  check_llllr{"'actor is present'"}
+  check_llllrl{"'actor.role == :admin'"}
+  check_llllrll{"'(actor(:role) == :manager) and relates_to_actor_via(:members)'"}
+  check_llllrr{"'actor.role == :admin'"}
+  check_lllr{"'actor is present'"}
+  check_llr{"'actor is present'"}
+  check_llrr{"'actor.role == :admin'"}
+  check_llrrr{"'record.members.users == actor'"}
+  check_r{"'actor is present'"}
+  check_rl{"'actor.role == :admin'"}
+  check_rll{"'(actor(:role) == :manager) and relates_to_actor_via(:members)'"}
+  check_rllr{"'(actor(:role) in [:admin, :manager]) and is_nil(archived_at)'"}
+  check_rr{"'actor.role == :admin'"}
+  start --> check_
+  check_ -->|No| check_l
+  check_ -->|Yes| check_r
+  check_l -->|No| check_ll
+  check_l -->|Yes| check_llllr
+  check_ll -->|No| check_lll
+  check_ll -->|Yes| check_llr
+  check_lll -->|No| check_llll
+  check_lll -->|Yes| check_lllr
+  check_llll -->|Yes| check_llllr
+  check_llllr -->|No| check_llllrl
+  check_llllr -->|Yes| check_llllrr
+  check_llllrl -->|No| check_llllrll
+  check_llllrll -->|Yes| authorized
+  check_llllrr -->|No| check_llllrll
+  check_llllrr -->|Yes| authorized
+  check_lllr -->|Yes| authorized
+  check_llr -->|Yes| check_llrr
+  check_llrr -->|Yes| check_llrrr
+  check_llrrr -->|No| authorized
+  check_r -->|No| check_rl
+  check_r -->|Yes| check_rr
+  check_rl -->|No| check_rll
+  check_rll -->|Yes| check_rllr
+  check_rllr -->|Yes| authorized
+  check_rr -->|No| check_rll
+  check_rr -->|Yes| check_rllr
+  classDef authorized fill:#e8f5e8,stroke:#4CAF50,stroke-width:2px
+  classDef forbidden fill:#fde8e8,stroke:#f44336,stroke-width:2px
+  class authorized authorized
+  class forbidden forbidden
+  classDef clause fill:#f3e5f5,stroke:#9C27B0,stroke-width:2px
+  classDef or_node fill:#fff3e0,stroke:#FF9800
 ```
 
 <!-- tabs-close -->
