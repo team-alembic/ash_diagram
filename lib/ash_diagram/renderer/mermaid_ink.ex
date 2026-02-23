@@ -84,8 +84,8 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
         :jpeg -> URI.append_query(uri, "type=jpeg")
         :png -> URI.append_query(uri, "type=png")
         :webp -> URI.append_query(uri, "type=webp")
-        :svg -> URI.append_path(uri, "svg")
-        :pdf -> URI.append_path(uri, "pdf")
+        :svg -> %{uri | path: String.replace(uri.path, "/img/", "/svg/")}
+        :pdf -> %{uri | path: String.replace(uri.path, "/img/", "/pdf/")}
       end
     end
 
