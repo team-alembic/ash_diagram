@@ -10,6 +10,7 @@ defmodule AshDiagram.Renderer.CLITest do
 
   describe inspect(&AshDiagram.render/1) do
     @tag :tmp_dir
+    @tag :visual
     test "renders a diagram", %{tmp_dir: tmp_dir} do
       data = read_fixture("flow.mmd")
 

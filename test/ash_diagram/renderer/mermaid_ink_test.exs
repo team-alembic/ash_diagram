@@ -11,6 +11,7 @@ defmodule AshDiagram.Renderer.MermaidInkTest do
   describe inspect(&MermaidInk.render/2) do
     @tag :tmp_dir
     @tag :external
+    @tag :visual
     test "renders a diagram", %{tmp_dir: tmp_dir} do
       data = read_fixture("flow.mmd")
 

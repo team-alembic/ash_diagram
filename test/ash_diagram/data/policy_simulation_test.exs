@@ -196,6 +196,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
     end
 
     @tag :tmp_dir
+    @tag :visual
     test "renders action-specific policy simulation", %{tmp_dir: tmp_dir} do
       read_action = Enum.find(Ash.Resource.Info.actions(Org), &(&1.type == :read))
 
@@ -238,6 +239,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
     end
 
     @tag :tmp_dir
+    @tag :visual
     test "renders false simulation", %{tmp_dir: tmp_dir} do
       read_action = Enum.find(Ash.Resource.Info.actions(Org), &(&1.type == :read))
 
@@ -263,6 +265,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
     end
 
     @tag :tmp_dir
+    @tag :visual
     test "renders true simulation", %{tmp_dir: tmp_dir} do
       read_action = Enum.find(Ash.Resource.Info.actions(Org), &(&1.type == :read))
 

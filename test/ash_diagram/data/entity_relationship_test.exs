@@ -10,8 +10,7 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
   doctest EntityRelationship
 
   describe inspect(&EntityRelationship.for_resources/1) do
-    @tag :tmp_dir
-    test "creates diagram from resources", %{tmp_dir: tmp_dir} do
+    test "creates diagram from resources" do
       diagram = EntityRelationship.for_resources([User, AshDiagram.Flow.Org])
 
       assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
@@ -31,6 +30,12 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                  }
                  "AshDiagram.Flow.Org" }o--o| "AshDiagram.Flow.User" : ""
                """
+    end
+
+    @tag :tmp_dir
+    @tag :visual
+    test "renders diagram from resources", %{tmp_dir: tmp_dir} do
+      diagram = EntityRelationship.for_resources([User, AshDiagram.Flow.Org])
 
       assert png = AshDiagram.render(diagram, format: :png)
 

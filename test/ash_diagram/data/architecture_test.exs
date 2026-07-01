@@ -11,8 +11,7 @@ defmodule AshDiagram.Data.ArchitectureTest do
   doctest Architecture
 
   describe inspect(&Architecture.for_resources/1) do
-    @tag :tmp_dir
-    test "creates architecture diagram from resources", %{tmp_dir: tmp_dir} do
+    test "creates architecture diagram from resources" do
       diagram = Architecture.for_resources([User, Org])
 
       assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
@@ -36,6 +35,12 @@ defmodule AshDiagram.Data.ArchitectureTest do
                  Rel("ash_diagram_flow_user", "mnesia", "uses", "Stores data")
                  Rel("ash_diagram_flow_org", "mnesia", "uses", "Stores data")
                """
+    end
+
+    @tag :tmp_dir
+    @tag :visual
+    test "renders architecture diagram from resources", %{tmp_dir: tmp_dir} do
+      diagram = Architecture.for_resources([User, Org])
 
       assert png = AshDiagram.render(diagram, format: :png)
 

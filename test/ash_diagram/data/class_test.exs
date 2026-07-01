@@ -10,8 +10,7 @@ defmodule AshDiagram.Data.ClassTest do
   doctest Class
 
   describe inspect(&Class.for_resources/1) do
-    @tag :tmp_dir
-    test "creates diagram from resources", %{tmp_dir: tmp_dir} do
+    test "creates diagram from resources" do
       diagram = Class.for_resources([User, AshDiagram.Flow.Org])
 
       assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
@@ -46,6 +45,12 @@ defmodule AshDiagram.Data.ClassTest do
                  }
                  `AshDiagram.Flow.Org` "*" o--* "0..1" `AshDiagram.Flow.User`
                """
+    end
+
+    @tag :tmp_dir
+    @tag :visual
+    test "renders diagram from resources", %{tmp_dir: tmp_dir} do
+      diagram = Class.for_resources([User, AshDiagram.Flow.Org])
 
       assert png = AshDiagram.render(diagram, format: :png)
 

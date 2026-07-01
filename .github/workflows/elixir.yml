@@ -12,6 +12,7 @@ jobs:
     with:
       postgres: false
       doctor: true
+      ex-unit-args: "--exclude visual"
       community-files: true
       conventional-commit: false
       tenants: false
