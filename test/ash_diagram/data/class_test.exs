@@ -5,13 +5,14 @@ defmodule AshDiagram.Data.ClassTest do
   import AshDiagram.VisualAssertions
 
   alias AshDiagram.Data.Class
+  alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
 
   doctest Class
 
   describe inspect(&Class.for_resources/1) do
     test "creates diagram from resources" do
-      diagram = Class.for_resources([User, AshDiagram.Flow.Org])
+      diagram = Class.for_resources([User, Org])
 
       assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
                """
@@ -50,7 +51,7 @@ defmodule AshDiagram.Data.ClassTest do
     @tag :tmp_dir
     @tag :visual
     test "renders diagram from resources", %{tmp_dir: tmp_dir} do
-      diagram = Class.for_resources([User, AshDiagram.Flow.Org])
+      diagram = Class.for_resources([User, Org])
 
       assert png = AshDiagram.render(diagram, format: :png)
 
