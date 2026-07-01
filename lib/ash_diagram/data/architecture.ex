@@ -361,7 +361,7 @@ defmodule AshDiagram.Data.Architecture do
       |> Enum.filter(fn relationship ->
         MapSet.member?(resources_set, relationship.destination)
       end)
-      |> Enum.sort()
+      |> Enum.sort_by(&{&1.source, &1.destination, &1.name})
       |> Enum.map(&build_resource_relationship(&1, entity_names))
       |> Enum.uniq()
 
