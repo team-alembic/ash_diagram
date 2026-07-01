@@ -49,7 +49,7 @@ Add `ash_diagram` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ash_diagram, "~> 0.1.0"}
+    {:ash_diagram, "~> 0.2.1"}
   ]
 end
 ```
@@ -59,7 +59,7 @@ For rendering capabilities, you'll also want to include optional dependencies:
 ```elixir
 def deps do
   [
-    {:ash_diagram, "~> 0.1.0"},
+    {:ash_diagram, "~> 0.2.1"},
     {:ex_cmd, "~> 0.15.0"},  # For CLI rendering
     {:req, "~> 0.5.15"}      # For Mermaid.ink rendering
   ]
