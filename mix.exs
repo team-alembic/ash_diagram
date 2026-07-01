@@ -17,6 +17,7 @@ defmodule AshDiagram.MixProject do
         "AshDiagram is a library for generating beautiful, interactive diagrams to visualize your Ash Framework applications.",
       source_url: "https://github.com/team-alembic/ash_diagram",
       package: package(),
+      dialyzer: [ignore_warnings: ".dialyzer_ignore.exs"],
       docs: &docs/0
     ]
   end
