@@ -47,18 +47,18 @@ defmodule AshDiagram.MixProject do
       {:clarity, "~> 0.3 and >= 0.3.0", optional: true},
       # Development
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:crux, "~> 0.1.0"},
+      {:crux, "~> 0.1"},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:doctest_formatter, "~> 0.4.0", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.18", only: [:dev, :test]},
       {:ex_check, "~> 0.15", only: [:dev, :test]},
-      {:ex_cmd, "~> 0.16.0", optional: true},
-      {:ex_doc, "~> 0.38.2", only: [:dev, :test], runtime: false},
+      {:ex_cmd, "~> 0.16", optional: true},
+      {:ex_doc, "~> 0.38", only: [:dev, :test], runtime: false},
       {:git_ops, "~> 2.4", only: [:dev, :test], runtime: false},
       {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:picosat_elixir, "~> 0.2.3", only: [:dev, :test]},
-      {:req, "~> 0.5.15", optional: true},
+      {:picosat_elixir, "~> 0.2", only: [:dev, :test]},
+      {:req, "~> 0.5", optional: true},
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:styler, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
