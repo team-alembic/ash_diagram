@@ -85,8 +85,7 @@ defmodule AshDiagram.Flowchart.Style do
   defp compose_properties(properties) do
     properties
     |> Enum.sort()
-    |> Enum.map(fn {key, value} -> [to_string(key), ":", to_string(value)] end)
-    |> Enum.intersperse(",")
+    |> Enum.map_intersperse(",", fn {key, value} -> [to_string(key), ":", to_string(value)] end)
     |> List.flatten()
   end
 end

@@ -51,8 +51,7 @@ defmodule AshDiagram.Class.Method do
 
   @spec compose_arguments(arguments :: [argument()]) :: iodata()
   defp compose_arguments(arguments) do
-    arguments
-    |> Enum.map(fn {name, type} ->
+    Enum.map_intersperse(arguments, ", ", fn {name, type} ->
       [
         if type do
           [Member.compose_type(type), " "]
@@ -62,6 +61,5 @@ defmodule AshDiagram.Class.Method do
         name
       ]
     end)
-    |> Enum.intersperse(", ")
   end
 end

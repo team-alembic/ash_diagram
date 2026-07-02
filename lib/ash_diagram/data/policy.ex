@@ -228,8 +228,7 @@ defmodule AshDiagram.Data.Policy do
         _ -> false
       end
     end)
-    |> Enum.map(&describe_condition_without_quotes/1)
-    |> Enum.intersperse(" and ")
+    |> Enum.map_intersperse(" and ", &describe_condition_without_quotes/1)
     |> Enum.join()
   end
 
@@ -500,8 +499,7 @@ defmodule AshDiagram.Data.Policy do
   @spec describe_conditions(list()) :: String.t()
   defp describe_conditions(conditions) do
     conditions
-    |> Enum.map(&describe_condition/1)
-    |> Enum.intersperse(" and ")
+    |> Enum.map_intersperse(" and ", &describe_condition/1)
     |> Enum.join()
   end
 
