@@ -18,6 +18,7 @@ jobs:
       tenants: false
       spark-formatter: false
       spark-cheat-sheets: false
+      igniter-upgrade: false
     permissions:
       id-token: write
       contents: write
