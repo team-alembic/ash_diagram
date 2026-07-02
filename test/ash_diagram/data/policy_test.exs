@@ -86,7 +86,7 @@ defmodule AshDiagram.Data.PolicyTest do
       nodes = Enum.filter(diagram.entries, &match?(%Node{}, &1))
       condition_nodes = Enum.filter(nodes, fn node -> String.ends_with?(node.id, "_conditions") end)
 
-      assert length(condition_nodes) > 0
+      assert condition_nodes != []
 
       Enum.each(condition_nodes, fn node ->
         assert node.shape == :rhombus
@@ -100,7 +100,7 @@ defmodule AshDiagram.Data.PolicyTest do
       nodes = Enum.filter(diagram.entries, &match?(%Node{}, &1))
       check_nodes = Enum.filter(nodes, fn node -> String.contains?(node.id, "_checks_") end)
 
-      assert length(check_nodes) > 0
+      assert check_nodes != []
 
       Enum.each(check_nodes, fn node ->
         assert node.shape == :rhombus
@@ -114,7 +114,7 @@ defmodule AshDiagram.Data.PolicyTest do
       edges = Enum.filter(diagram.entries, &match?(%Edge{}, &1))
       labeled_edges = Enum.filter(edges, fn edge -> edge.label in ["True", "False"] end)
 
-      assert length(labeled_edges) > 0
+      assert labeled_edges != []
     end
 
     test "creates style definitions for results" do
@@ -129,7 +129,7 @@ defmodule AshDiagram.Data.PolicyTest do
 
       # Should have node style applications
       node_styles = Enum.filter(styles, fn style -> style.type == :node end)
-      assert length(node_styles) > 0
+      assert node_styles != []
     end
 
     test "handles custom title option" do
@@ -156,7 +156,7 @@ defmodule AshDiagram.Data.PolicyTest do
       assert diagram.title =~ "Policy Flow: AshDiagram.Flow.Org"
 
       # Should generate valid structure
-      assert length(diagram.entries) > 0
+      assert diagram.entries != []
     end
   end
 
@@ -169,7 +169,7 @@ defmodule AshDiagram.Data.PolicyTest do
       true_edges = Enum.filter(edges, fn edge -> edge.label == "True" end)
 
       # Should have True paths that lead toward authorization
-      assert length(true_edges) > 0
+      assert true_edges != []
     end
 
     test "correctly represents forbid_if policies" do
@@ -180,7 +180,7 @@ defmodule AshDiagram.Data.PolicyTest do
       check_nodes = Enum.filter(nodes, fn node -> String.contains?(node.id, "_checks_") end)
 
       # At least some check nodes should exist (forbid_if policies create checks)
-      assert length(check_nodes) > 0
+      assert check_nodes != []
     end
 
     test "handles bypass policies correctly" do
@@ -190,8 +190,8 @@ defmodule AshDiagram.Data.PolicyTest do
       nodes = Enum.filter(diagram.entries, &match?(%Node{}, &1))
       edges = Enum.filter(diagram.entries, &match?(%Edge{}, &1))
 
-      assert length(nodes) > 0
-      assert length(edges) > 0
+      assert nodes != []
+      assert edges != []
     end
   end
 

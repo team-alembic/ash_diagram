@@ -96,7 +96,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
             (is_list(edge.to) and String.starts_with?(IO.iodata_to_binary(edge.to), "check_"))
         end)
 
-      assert length(check_edges) > 0
+      assert check_edges != []
     end
 
     test "includes required style definitions" do
@@ -109,7 +109,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
 
       # Should have node style applications
       node_styles = Enum.filter(styles, fn style -> style.type == :node end)
-      assert length(node_styles) > 0
+      assert node_styles != []
     end
 
     test "creates decision tree structure" do
@@ -122,7 +122,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
           is_list(node.id) and String.starts_with?(IO.iodata_to_binary(node.id), "check_")
         end)
 
-      assert length(check_nodes) > 0
+      assert check_nodes != []
     end
 
     test "composes valid Mermaid syntax" do
