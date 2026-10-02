@@ -62,6 +62,10 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
     @doc false
     @impl AshDiagram.Renderer
     def render(diagram, options) do
+      # A mix task, or any caller that has not started its applications, has
+      # no Req.Finch pool yet.
+      {:ok, _started} = Application.ensure_all_started(:req)
+
       diagram
       |> build_uri(options)
       |> Req.get!()
