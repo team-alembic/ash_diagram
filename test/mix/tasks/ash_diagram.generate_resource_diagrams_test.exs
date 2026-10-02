@@ -8,12 +8,20 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagramsTest do
   @source_dir Path.expand("../../support/flow", __DIR__)
 
   setup do
+    previous_shell = Mix.shell()
     Mix.shell(Mix.Shell.Process)
+    # Also before the test, in case an earlier run left a file.
+    remove_outputs()
 
     on_exit(fn ->
-      Mix.shell(Mix.Shell.IO)
-      @source_dir |> Path.join("domain-mermaid-*") |> Path.wildcard() |> Enum.each(&File.rm!/1)
+      Mix.shell(previous_shell)
+      remove_outputs()
     end)
+  end
+
+  @spec remove_outputs() :: :ok
+  defp remove_outputs do
+    @source_dir |> Path.join("domain-mermaid-*") |> Path.wildcard() |> Enum.each(&File.rm!/1)
   end
 
   @spec output(name :: String.t()) :: Path.t()

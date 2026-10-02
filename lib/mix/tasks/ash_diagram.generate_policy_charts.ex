@@ -5,8 +5,8 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyCharts do
   #{@shortdoc}.
 
   This task replaces `mix ash.generate_policy_charts`. It takes the same
-  options, and it writes the same files, next to the source file of each
-  resource. It reads the resources of the domains in
+  options, and it gives each file the same name, next to the source file of
+  each resource. It reads the resources of the domains in
   `config :my_app, :ash_domains`, and it skips each resource that does not
   use `Ash.Policy.Authorizer`.
 
@@ -15,23 +15,10 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyCharts do
     * `--only` - generates only for the resource in the given source file.
       Repeat the option for more than one resource.
     * `--all` - generates for every resource. Give `--only` or `--all`.
-    * `--format` - one of:
-      * `plain` - the Mermaid source in a `.mmd` file. This is the default.
-      * `md` - the Mermaid source in a Markdown code block, in a `.md` file.
-      * `svg`, `pdf` or `png` - an image from `AshDiagram.render/2`.
+    * `--format` - `plain`, `md`, `svg`, `pdf` or `png`. Defaults to `plain`.
+      See "Formats".
 
-  ## Images
-
-  `svg`, `pdf` and `png` use the renderer that `AshDiagram.Renderer` selects.
-  When `mmdc` is not on the `PATH` and `:req` is a dependency, that renderer
-  is the third-party mermaid.ink web service. To keep your diagrams on your
-  machine, set:
-
-      config :ash_diagram, :renderer, AshDiagram.Renderer.CLI
-
-  When `mermaidConfig.json` is in the current directory, the task gives it
-  to the renderer. Only `AshDiagram.Renderer.CLI` reads it.
-
+  #{Mix.AshDiagram.formats_doc()}
   ## Examples
 
       mix ash_diagram.generate_policy_charts --all
@@ -48,8 +35,6 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyCharts do
 
   @impl Mix.Task
   def run(argv) do
-    Mix.Task.run("compile")
-
     {opts, _args} =
       OptionParser.parse!(argv,
         strict: [only: :keep, all: :boolean, format: :string],
@@ -64,21 +49,15 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyCharts do
 
     format = opts |> Keyword.get(:format, "plain") |> Mix.AshDiagram.validate_format!()
 
+    # After the options are valid, so that a usage error shows at once. The
+    # config, which can choose the renderer, loads with the compile.
+    Mix.Task.run("app.config")
+
     Mix.AshDiagram.domains()
     |> Enum.flat_map(&Info.resources/1)
     |> Enum.filter(&(Authorizer in Spark.extensions(&1) and Mix.AshDiagram.selected?(&1, only)))
-    |> Task.async_stream(
-      fn resource ->
-        Mix.AshDiagram.write_diagram(
-          Mix.AshDiagram.source(resource),
-          "policy-flowchart",
-          format,
-          Policy.for_resource(resource),
-          "Generated Mermaid Flow Chart for #{inspect(resource)}"
-        )
-      end,
-      timeout: :infinity
-    )
-    |> Stream.run()
+    |> Mix.AshDiagram.write_all("policy-flowchart", format, fn resource ->
+      {Policy.for_resource(resource), "Generated Mermaid Flow Chart for #{inspect(resource)}"}
+    end)
   end
 end
