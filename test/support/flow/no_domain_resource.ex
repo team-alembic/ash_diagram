@@ -1,6 +1,7 @@
 defmodule AshDiagram.Flow.NoDomainResource do
   @moduledoc false
-  # `domain: nil`, as for a resource that more than one domain lists.
+  # This resource has `domain: nil`. A resource that more than one domain
+  # lists has this setting.
   use Ash.Resource,
     domain: nil,
     authorizers: [Ash.Policy.Authorizer],

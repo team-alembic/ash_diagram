@@ -305,8 +305,8 @@ defmodule AshDiagram.Data.Architecture do
         end)
 
       case domain do
-        # A resource with `domain: nil` is in no one domain, so it has no
-        # domain boundary.
+        # A resource with `domain: nil` has no domain of its own, so it goes
+        # directly in the application boundary.
         nil ->
           resource_elements
 
@@ -347,7 +347,8 @@ defmodule AshDiagram.Data.Architecture do
     domain_extensions =
       resources
       |> Enum.map(&Ash.Resource.Info.domain/1)
-      # A resource with `domain: nil` can be in more than one domain.
+      # A resource with `domain: nil` has no domain of its own, so it adds no
+      # domain extensions.
       |> Enum.reject(&is_nil/1)
       |> Enum.flat_map(&Info.extensions/1)
 

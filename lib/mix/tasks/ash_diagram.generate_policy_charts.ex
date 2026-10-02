@@ -44,13 +44,14 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyCharts do
     only = Mix.AshDiagram.only(opts)
 
     if is_nil(only) and not Keyword.get(opts, :all, false) do
-      Mix.raise("Must pass the `--only` option or the `--all` option.")
+      Mix.raise("Give the `--only` option or the `--all` option.")
     end
 
     format = opts |> Keyword.get(:format, "plain") |> Mix.AshDiagram.validate_format!()
 
-    # After the options are valid, so that a usage error shows at once. The
-    # config, which can choose the renderer, loads with the compile.
+    # The options are validated first, so that a usage error shows before a
+    # long compile. "app.config" compiles the project and loads its config,
+    # which can set the renderer.
     Mix.Task.run("app.config")
 
     Mix.AshDiagram.domains()

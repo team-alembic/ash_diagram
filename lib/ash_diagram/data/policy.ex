@@ -71,7 +71,8 @@ defmodule AshDiagram.Data.Policy do
 
     resource_extensions = Ash.Resource.Info.extensions(resource)
 
-    # A resource with `domain: nil` can be in more than one domain.
+    # A resource with `domain: nil` has no domain of its own, so it adds no
+    # domain extensions.
     domain_extensions =
       case Ash.Resource.Info.domain(resource) do
         nil -> []

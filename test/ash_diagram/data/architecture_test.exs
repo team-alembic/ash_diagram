@@ -12,7 +12,7 @@ defmodule AshDiagram.Data.ArchitectureTest do
   doctest Architecture
 
   describe inspect(&Architecture.for_resources/1) do
-    test "puts a resource without a domain in no domain boundary" do
+    test "puts a resource without a domain directly in the application boundary" do
       composed = [NoDomainResource] |> Architecture.for_resources() |> AshDiagram.compose() |> IO.iodata_to_binary()
 
       assert composed =~ ~s|System("ash_diagram_flow_no_domain_resource", "NoDomainResource"|
