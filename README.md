@@ -82,6 +82,30 @@ png_data = AshDiagram.render(diagram, format: :png)
 File.write!("diagram.png", png_data)
 ```
 
+### Mix Tasks
+
+AshDiagram has mix tasks that write a diagram file next to the source file
+of each domain or resource. They replace the Mermaid tasks in `ash`, and
+they take the same options.
+
+```bash
+# A class diagram for each domain in `config :my_app, :ash_domains`
+mix ash_diagram.generate_resource_diagrams
+
+# An ER diagram as SVG
+mix ash_diagram.generate_resource_diagrams --type er --format svg
+
+# A policy flowchart for each resource that uses Ash.Policy.Authorizer
+mix ash_diagram.generate_policy_charts --all
+```
+
+| `ash` task | AshDiagram task |
+|---|---|
+| `mix ash.generate_resource_diagrams` | `mix ash_diagram.generate_resource_diagrams` |
+| `mix ash.generate_policy_charts` | `mix ash_diagram.generate_policy_charts` |
+
+Run `mix help <task>` for all the options.
+
 ### Integration with Clarity
 
 AshDiagram includes a [`clarity`](https://hex.pm/packages/clarity) introspector that automatically generates diagrams for your Ash applications.
