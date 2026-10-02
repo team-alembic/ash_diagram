@@ -5,8 +5,8 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
   #{@shortdoc}.
 
   This task replaces `mix ash.generate_resource_diagrams`. It takes the same
-  options, and it writes the same files, next to the source file of each
-  domain. It reads the domains from `config :my_app, :ash_domains`.
+  options, and it gives each file the same name, next to the source file of
+  each domain. It reads the domains from `config :my_app, :ash_domains`.
 
   ## Command line options
 
@@ -14,23 +14,10 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
       `architecture` writes a C4 diagram.
     * `--only` - generates only for the domain in the given source file.
       Repeat the option for more than one domain.
-    * `--format` - one of:
-      * `plain` - the Mermaid source in a `.mmd` file. This is the default.
-      * `md` - the Mermaid source in a Markdown code block, in a `.md` file.
-      * `svg`, `pdf` or `png` - an image from `AshDiagram.render/2`.
+    * `--format` - `plain`, `md`, `svg`, `pdf` or `png`. Defaults to `plain`.
+      See "Formats".
 
-  ## Images
-
-  `svg`, `pdf` and `png` use the renderer that `AshDiagram.Renderer` selects.
-  When `mmdc` is not on the `PATH` and `:req` is a dependency, that renderer
-  is the third-party mermaid.ink web service. To keep your diagrams on your
-  machine, set:
-
-      config :ash_diagram, :renderer, AshDiagram.Renderer.CLI
-
-  When `mermaidConfig.json` is in the current directory, the task gives it
-  to the renderer. Only `AshDiagram.Renderer.CLI` reads it.
-
+  #{Mix.AshDiagram.formats_doc()}
   ## Examples
 
       mix ash_diagram.generate_resource_diagrams
@@ -54,8 +41,6 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
 
   @impl Mix.Task
   def run(argv) do
-    Mix.Task.run("compile")
-
     {opts, _args} =
       OptionParser.parse!(argv,
         strict: [only: :keep, type: :string, format: :string],
@@ -66,21 +51,15 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
     format = opts |> Keyword.get(:format, "plain") |> Mix.AshDiagram.validate_format!()
     only = Mix.AshDiagram.only(opts)
 
+    # After the options are valid, so that a usage error shows at once. The
+    # config, which can choose the renderer, loads with the compile.
+    Mix.Task.run("app.config")
+
     Mix.AshDiagram.domains()
     |> Enum.filter(&Mix.AshDiagram.selected?(&1, only))
-    |> Task.async_stream(
-      fn domain ->
-        Mix.AshDiagram.write_diagram(
-          Mix.AshDiagram.source(domain),
-          suffix,
-          format,
-          creator.for_domains([domain]),
-          "Generated #{label} for #{inspect(domain)}"
-        )
-      end,
-      timeout: :infinity
-    )
-    |> Stream.run()
+    |> Mix.AshDiagram.write_all(suffix, format, fn domain ->
+      {creator.for_domains([domain]), "Generated #{label} for #{inspect(domain)}"}
+    end)
   end
 
   @spec type!(type :: String.t()) :: {module(), String.t(), String.t()}
