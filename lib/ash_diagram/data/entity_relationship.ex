@@ -208,7 +208,8 @@ defmodule AshDiagram.Data.EntityRelationship do
     domain_extensions =
       resources
       |> Enum.map(&Ash.Resource.Info.domain/1)
-      # A resource with `domain: nil` can be in more than one domain.
+      # A resource with `domain: nil` has no domain of its own, so it adds no
+      # domain extensions.
       |> Enum.reject(&is_nil/1)
       |> Enum.flat_map(&Info.extensions/1)
 

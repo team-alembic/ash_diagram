@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagramsTest do
-  # Not async: the task writes files next to test/support/flow/domain.ex,
-  # and the tests change the Mix shell.
+  # These tests are not async. The task writes files next to
+  # test/support/flow/domain.ex, and the tests change the Mix shell.
   use ExUnit.Case, async: false
 
   alias Mix.Tasks.AshDiagram.GenerateResourceDiagrams
@@ -10,7 +10,8 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagramsTest do
   setup do
     previous_shell = Mix.shell()
     Mix.shell(Mix.Shell.Process)
-    # Also before the test, in case an earlier run left a file.
+    # Remove the files before the test too, because an interrupted run can
+    # leave a file.
     remove_outputs()
 
     on_exit(fn ->

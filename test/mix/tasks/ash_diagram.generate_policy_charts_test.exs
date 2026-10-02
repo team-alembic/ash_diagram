@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.AshDiagram.GeneratePolicyChartsTest do
-  # Not async: the task writes files next to test/support/flow/*.ex, and the
-  # tests change the Mix shell.
+  # These tests are not async. The task writes files next to
+  # test/support/flow/*.ex, and the tests change the Mix shell.
   use ExUnit.Case, async: false
 
   alias Mix.Tasks.AshDiagram.GeneratePolicyCharts
@@ -10,7 +10,8 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyChartsTest do
   setup do
     previous_shell = Mix.shell()
     Mix.shell(Mix.Shell.Process)
-    # Also before the test, in case an earlier run left a file.
+    # Remove the files before the test too, because an interrupted run can
+    # leave a file.
     remove_outputs()
 
     on_exit(fn ->
@@ -28,7 +29,7 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyChartsTest do
   defp output(name), do: Path.join(@source_dir, name)
 
   test "raises without --only or --all" do
-    assert_raise Mix.Error, ~r/Must pass the `--only` option or the `--all` option/, fn ->
+    assert_raise Mix.Error, ~r/Give the `--only` option or the `--all` option/, fn ->
       GeneratePolicyCharts.run([])
     end
   end

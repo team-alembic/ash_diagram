@@ -51,8 +51,9 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
     format = opts |> Keyword.get(:format, "plain") |> Mix.AshDiagram.validate_format!()
     only = Mix.AshDiagram.only(opts)
 
-    # After the options are valid, so that a usage error shows at once. The
-    # config, which can choose the renderer, loads with the compile.
+    # The options are validated first, so that a usage error shows before a
+    # long compile. "app.config" compiles the project and loads its config,
+    # which can set the renderer.
     Mix.Task.run("app.config")
 
     Mix.AshDiagram.domains()

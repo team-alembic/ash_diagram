@@ -1,13 +1,14 @@
 defmodule Mix.AshDiagramTest do
-  # Not async: the tests change the Mix shell, the renderer config and the
-  # current directory, which are global, and they write next to
-  # test/support/flow/*.ex.
+  # These tests are not async. They change the Mix shell, the renderer config
+  # and the current directory, which are global. They also write files next
+  # to test/support/flow/*.ex.
   use ExUnit.Case, async: false
 
   alias AshDiagram.Flow.Domain
   alias AshDiagram.Flow.User
 
-  # Two modules in this one source file, so their diagram files conflict.
+  # These two modules are in one source file, so they get the same diagram
+  # file.
   defmodule One, do: @moduledoc(false)
   defmodule Two, do: @moduledoc(false)
 
@@ -66,8 +67,9 @@ defmodule Mix.AshDiagramTest do
     end
 
     test "raises when the module has no source file" do
-      # A module compiled from forms, like one compiled with the
-      # `deterministic` option, has no :source in its compile info.
+      # A module that is compiled from forms has no :source in its compile
+      # info. A module that is compiled with the `deterministic` option has
+      # the same problem.
       forms = [{:attribute, 1, :module, :ash_diagram_no_source}, {:attribute, 1, :export, []}]
       {:ok, module, binary} = :compile.forms(forms, [:binary, :deterministic])
       {:module, ^module} = :code.load_binary(module, ~c"nofile", binary)
@@ -131,8 +133,8 @@ defmodule Mix.AshDiagramTest do
 
     @tag :tmp_dir
     test "svg, pdf and png go through the configured renderer", %{tmp_dir: tmp_dir} do
-      # In an empty directory, so that a mermaidConfig.json in the project
-      # root does not change the options.
+      # The test runs in an empty directory. Then a mermaidConfig.json in the
+      # project root cannot change the options.
       File.cd!(tmp_dir, fn ->
         for format <- ~w[svg pdf png] do
           Mix.AshDiagram.write_all([Domain], "test-flow", format, &build/1)
@@ -179,7 +181,7 @@ defmodule Mix.AshDiagramTest do
       end
 
       message =
-        ~r/Could not write the diagram of AshDiagram.Flow.User to .*user-test-flow.mmd:\nthe renderer failed/
+        ~r/The task could not write the diagram of AshDiagram.Flow.User to .*user-test-flow.mmd:\nthe renderer failed/
 
       assert_raise Mix.Error, message, fn ->
         Mix.AshDiagram.write_all([User, Domain], "test-flow", "plain", build)

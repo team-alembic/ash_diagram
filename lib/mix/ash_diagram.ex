@@ -1,8 +1,8 @@
 defmodule Mix.AshDiagram do
   @moduledoc false
 
-  # Shared by the `mix ash_diagram.*` tasks. It replaces `Mix.Mermaid` in Ash,
-  # but it renders through `AshDiagram.render/2`, never through a shell.
+  # The `mix ash_diagram.*` tasks use this module. It replaces `Mix.Mermaid`
+  # in Ash. It renders through `AshDiagram.render/2`, never through a shell.
 
   @render_formats %{"svg" => :svg, "pdf" => :pdf, "png" => :png}
   @formats ~w[plain md] ++ Map.keys(@render_formats)
@@ -65,8 +65,9 @@ defmodule Mix.AshDiagram do
       nil ->
         Mix.raise("""
         The source file of #{inspect(module)} is not known, so the task cannot \
-        name its diagram file. Compile the project without the Erlang \
-        `deterministic` option, for example in ERL_COMPILER_OPTIONS.
+        name its diagram file. This occurs when the code is compiled with the \
+        Erlang `deterministic` option. Remove that option, for example from \
+        ERL_COMPILER_OPTIONS, and compile again.
         """)
 
       source ->
@@ -103,8 +104,8 @@ defmodule Mix.AshDiagram do
   # Writes one diagram for each module, and returns the paths in the order of
   # `modules`. `build` gives the diagram of a module and the message to print.
   # A module that is in `modules` more than once gets one file. When a diagram
-  # fails, the others are still written, then the function raises with every
-  # error.
+  # fails, the function still writes the others. Then it raises one error that
+  # contains every failure.
   @doc false
   @spec write_all(
           modules :: [module()],
@@ -135,8 +136,9 @@ defmodule Mix.AshDiagram do
     end
   end
 
-  # Two modules in one source file, for example, would write to the same file
-  # at the same time, and one diagram would be lost.
+  # For example, two modules in one source file get the same diagram file.
+  # Without this check, they write to it at the same time, and one diagram is
+  # lost.
   @spec check_conflicts!(jobs :: [{module(), Path.t()}]) :: [{module(), Path.t()}]
   defp check_conflicts!(jobs) do
     conflicts =
@@ -150,7 +152,8 @@ defmodule Mix.AshDiagram do
 
       #{Enum.map_join(conflicts, "\n", fn {path, modules} -> "  #{path}: #{Enum.map_join(modules, ", ", &inspect/1)}" end)}
 
-      Put each module in its own source file.
+      The file name comes from the source file name, so `--only` cannot
+      separate these modules. Put each module in its own source file.
       """)
     end
 
@@ -172,7 +175,7 @@ defmodule Mix.AshDiagram do
   rescue
     error ->
       {:error,
-       "Could not write the diagram of #{inspect(module)} to #{path}:\n" <>
+       "The task could not write the diagram of #{inspect(module)} to #{path}:\n" <>
          Exception.message(error)}
   end
 
