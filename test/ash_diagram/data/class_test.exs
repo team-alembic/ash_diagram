@@ -7,12 +7,19 @@ defmodule AshDiagram.Data.ClassTest do
   alias AshDiagram.Aggregates.Author
   alias AshDiagram.Aggregates.Post
   alias AshDiagram.Data.Class
+  alias AshDiagram.Flow.NoDomainResource
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
 
   doctest Class
 
   describe inspect(&Class.for_resources/1) do
+    test "creates diagram from a resource without a domain" do
+      diagram = Class.for_resources([NoDomainResource])
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() =~ "AshDiagram.Flow.NoDomainResource"
+    end
+
     test "creates diagram from resources" do
       diagram = Class.for_resources([User, Org])
 

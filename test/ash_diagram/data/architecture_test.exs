@@ -5,12 +5,20 @@ defmodule AshDiagram.Data.ArchitectureTest do
   import AshDiagram.VisualAssertions
 
   alias AshDiagram.Data.Architecture
+  alias AshDiagram.Flow.NoDomainResource
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
 
   doctest Architecture
 
   describe inspect(&Architecture.for_resources/1) do
+    test "puts a resource without a domain in no domain boundary" do
+      composed = [NoDomainResource] |> Architecture.for_resources() |> AshDiagram.compose() |> IO.iodata_to_binary()
+
+      assert composed =~ ~s|System("ash_diagram_flow_no_domain_resource", "NoDomainResource"|
+      refute composed =~ ~s|System_Boundary("nil"|
+    end
+
     test "creates architecture diagram from resources" do
       diagram = Architecture.for_resources([User, Org])
 

@@ -296,6 +296,8 @@ defmodule AshDiagram.Data.Class do
     domain_extensions =
       resources
       |> Enum.map(&Ash.Resource.Info.domain/1)
+      # A resource with `domain: nil` can be in more than one domain.
+      |> Enum.reject(&is_nil/1)
       |> Enum.flat_map(&Info.extensions/1)
 
     Enum.uniq(resource_extensions ++ domain_extensions)

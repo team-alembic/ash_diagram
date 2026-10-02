@@ -71,10 +71,12 @@ defmodule AshDiagram.Data.Policy do
 
     resource_extensions = Ash.Resource.Info.extensions(resource)
 
+    # A resource with `domain: nil` can be in more than one domain.
     domain_extensions =
-      resource
-      |> Ash.Resource.Info.domain()
-      |> Ash.Domain.Info.extensions()
+      case Ash.Resource.Info.domain(resource) do
+        nil -> []
+        domain -> Ash.Domain.Info.extensions(domain)
+      end
 
     extensions = Enum.uniq(resource_extensions ++ domain_extensions)
 

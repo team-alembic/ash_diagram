@@ -7,6 +7,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
   alias Ash.Policy.Check.ActorPresent
   alias AshDiagram.Data.PolicySimulation
   alias AshDiagram.Flow.Domain
+  alias AshDiagram.Flow.NoDomainResource
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flowchart
   alias AshDiagram.Flowchart.Edge
@@ -27,6 +28,10 @@ defmodule AshDiagram.Data.PolicySimulationTest do
   end
 
   describe "Core Interface" do
+    test "generates flowchart for resource without a domain" do
+      assert %Flowchart{} = PolicySimulation.for_resource(NoDomainResource)
+    end
+
     test "generates flowchart for resource with policies" do
       diagram = PolicySimulation.for_resource(Org)
 
