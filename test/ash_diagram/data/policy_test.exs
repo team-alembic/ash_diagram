@@ -4,6 +4,7 @@ defmodule AshDiagram.Data.PolicyTest do
   alias AshDiagram.Data.Policy
   alias AshDiagram.Flow.Domain
   alias AshDiagram.Flow.MultipleConditionalPoliciesResource
+  alias AshDiagram.Flow.NoDomainResource
   alias AshDiagram.Flow.OptimizationTestResource
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
@@ -41,6 +42,13 @@ defmodule AshDiagram.Data.PolicyTest do
   end
 
   describe inspect(&Policy.for_resource/2) do
+    test "generates flowchart for resource without a domain" do
+      diagram = Policy.for_resource(NoDomainResource)
+
+      assert %Flowchart{} = diagram
+      assert diagram.title =~ "Policy Flow: AshDiagram.Flow.NoDomainResource"
+    end
+
     test "generates flowchart for resource with policies" do
       diagram = Policy.for_resource(User)
 
