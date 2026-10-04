@@ -4,6 +4,7 @@ defmodule AshDiagram.C4Test do
   alias AshDiagram.C4
 
   describe inspect(&C4.compose/1) do
+    @tag :external
     test "renders a valid C4 diagram" do
       diagram = %C4{
         type: :c4_context,

@@ -185,6 +185,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
     # Too large to pixel-compare reliably: Mermaid lays out big diagrams
     # non-deterministically between renders. Render as a smoke test and
     # assert on the deterministic structure instead.
+    @tag :external
     test "renders complete resource policy simulation" do
       diagram =
         PolicySimulation.for_resource(
@@ -228,6 +229,7 @@ defmodule AshDiagram.Data.PolicySimulationTest do
     end
 
     # See note above: rendered non-deterministically, so no pixel comparison.
+    @tag :external
     test "renders field-specific policy simulation" do
       diagram =
         PolicySimulation.for_field(

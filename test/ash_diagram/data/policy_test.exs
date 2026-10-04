@@ -269,6 +269,7 @@ defmodule AshDiagram.Data.PolicyTest do
       assert result =~ "-->"
     end
 
+    @tag :external
     test "renders with AshDiagram.render/2" do
       diagram = Policy.for_resource(User)
 
@@ -323,6 +324,7 @@ defmodule AshDiagram.Data.PolicyTest do
   # fixture is unstable. They render as a smoke test and assert on the
   # deterministic Mermaid source instead.
   describe "Visual Policy Flow Charts" do
+    @tag :external
     test "renders complex organization policy flow" do
       diagram = Policy.for_resource(Org, title: "Complex Organization Policies")
 
@@ -332,6 +334,7 @@ defmodule AshDiagram.Data.PolicyTest do
       assert AshDiagram.render(diagram, format: :png, background_color: "white")
     end
 
+    @tag :external
     test "renders multiple conditional policies resource" do
       diagram =
         Policy.for_resource(MultipleConditionalPoliciesResource,
@@ -346,6 +349,7 @@ defmodule AshDiagram.Data.PolicyTest do
       assert AshDiagram.render(diagram, format: :png, background_color: "white")
     end
 
+    @tag :external
     test "renders optimization test resource with simplification" do
       diagram_simple =
         Policy.for_resource(OptimizationTestResource,
@@ -363,6 +367,7 @@ defmodule AshDiagram.Data.PolicyTest do
       assert AshDiagram.render(diagram_complex, format: :png, background_color: "white")
     end
 
+    @tag :external
     test "renders policy diagram with special characters" do
       diagram = Policy.for_resource(OptimizationTestResource)
 

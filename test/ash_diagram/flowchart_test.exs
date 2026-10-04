@@ -219,6 +219,7 @@ defmodule AshDiagram.FlowchartTest do
   end
 
   describe "integration with AshDiagram" do
+    @tag :external
     test "renders with AshDiagram.render/2" do
       diagram = %Flowchart{
         entries: [
@@ -247,6 +248,7 @@ defmodule AshDiagram.FlowchartTest do
              """
     end
 
+    @tag :external
     test "renders complex flowchart with SVG integration" do
       diagram = %Flowchart{
         title: "Complete Feature Implementation",
