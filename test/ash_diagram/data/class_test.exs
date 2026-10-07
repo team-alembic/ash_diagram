@@ -4,6 +4,8 @@ defmodule AshDiagram.Data.ClassTest do
   import AshDiagram.Fixture
   import AshDiagram.VisualAssertions
 
+  alias AshDiagram.Aggregates.Author
+  alias AshDiagram.Aggregates.Post
   alias AshDiagram.Data.Class
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
@@ -92,6 +94,30 @@ defmodule AshDiagram.Data.ClassTest do
                    +report(String reason) : action~?Boolean~
                  }
                  `AshDiagram.Flow.Org` "*" o--* "0..1" `AshDiagram.Flow.User`
+               """
+    end
+
+    test "resolves aggregate types" do
+      diagram = Class.for_resources([Author, Post])
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
+               """
+               classDiagram
+                 class `AshDiagram.Aggregates.Author`["Author"] {
+                   +UUID id
+                   +Integer post_count
+                   +Boolean has_posts?
+                   +Integer top_score
+                   +String[] titles
+                   +String joined_titles
+                 }
+                 class `AshDiagram.Aggregates.Post`["Post"] {
+                   +UUID id
+                   +?String title
+                   +?Integer score
+                   +?UUID author_id
+                 }
+                 `AshDiagram.Aggregates.Author` "*" o--* "0..1" `AshDiagram.Aggregates.Post`
                """
     end
   end

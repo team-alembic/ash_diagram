@@ -4,6 +4,8 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
   import AshDiagram.Fixture
   import AshDiagram.VisualAssertions
 
+  alias AshDiagram.Aggregates.Author
+  alias AshDiagram.Aggregates.Post
   alias AshDiagram.Data.EntityRelationship
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
@@ -68,6 +70,30 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                    Boolean？ approved？
                  }
                  "AshDiagram.Flow.Org" }o--o| "AshDiagram.Flow.User" : ""
+               """
+    end
+
+    test "resolves aggregate types" do
+      diagram = EntityRelationship.for_resources([Author, Post])
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
+               """
+               erDiagram
+                 "AshDiagram.Aggregates.Author"["Author"] {
+                   UUID id
+                   Integer post_count
+                   Boolean has_posts？
+                   Integer top_score
+                   String[] titles
+                   String joined_titles
+                 }
+                 "AshDiagram.Aggregates.Post"["Post"] {
+                   UUID id
+                   String？ title
+                   Integer？ score
+                   UUID？ author_id
+                 }
+                 "AshDiagram.Aggregates.Author" }o--o| "AshDiagram.Aggregates.Post" : ""
                """
     end
   end

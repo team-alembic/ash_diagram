@@ -16,6 +16,7 @@ defmodule AshDiagram.Data.EntityRelationship do
   """
 
   alias Ash.Domain.Info
+  alias Ash.Resource.Aggregate
   alias Ash.Resource.Relationships
   alias AshDiagram.Data.Extension
   alias AshDiagram.EntityRelationship, as: DiagramImpl
@@ -171,8 +172,11 @@ defmodule AshDiagram.Data.EntityRelationship do
           end
 
         aggregates =
-          for %Ash.Resource.Aggregate{name: name, type: type} <- aggregate_fun.(resource) do
-            %DiagramImpl.Attribute{type: compose_type(type), name: sanitize_property_name(name)}
+          for %Aggregate{name: name} = aggregate <- aggregate_fun.(resource) do
+            %DiagramImpl.Attribute{
+              type: compose_type(aggregate_type(resource, aggregate)),
+              name: sanitize_property_name(name)
+            }
           end
 
         %DiagramImpl.Entity{
@@ -211,6 +215,16 @@ defmodule AshDiagram.Data.EntityRelationship do
     Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
       entries: entries ++ relationships
     })
+  end
+
+  @spec aggregate_type(resource :: Ash.Resource.t(), aggregate :: Aggregate.t()) ::
+          Ash.Type.t() | nil
+  defp aggregate_type(resource, aggregate) do
+    case Ash.Resource.Info.aggregate_type(resource, aggregate) do
+      {:ok, type} -> type
+      # Custom aggregates can't be resolved by kind, they declare their type explicitly
+      {:error, _reason} -> Ash.Type.get_type(aggregate.type)
+    end
   end
 
   @spec compose_type(type :: Ash.Type.t(), allow_nil? :: boolean()) :: iodata()

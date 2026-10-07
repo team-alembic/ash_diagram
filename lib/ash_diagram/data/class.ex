@@ -190,7 +190,7 @@ defmodule AshDiagram.Data.Class do
     for resource <- Enum.sort(resources) do
       attributes = build_attributes(attribute_fun.(resource))
       calculations = build_calculations(calculation_fun.(resource))
-      aggregates = build_aggregates(aggregate_fun.(resource))
+      aggregates = build_aggregates(resource, aggregate_fun.(resource))
       actions = build_actions(resource, entity_names[resource])
 
       %DiagramImpl.Class{
@@ -223,14 +223,25 @@ defmodule AshDiagram.Data.Class do
     end
   end
 
-  @spec build_aggregates(aggregates :: [Aggregate.t()]) :: [DiagramImpl.Field.t()]
-  defp build_aggregates(aggregates) do
-    for %Aggregate{name: name, type: type, public?: public?} <- aggregates do
+  @spec build_aggregates(resource :: Ash.Resource.t(), aggregates :: [Aggregate.t()]) ::
+          [DiagramImpl.Field.t()]
+  defp build_aggregates(resource, aggregates) do
+    for %Aggregate{name: name, public?: public?} = aggregate <- aggregates do
       %DiagramImpl.Field{
-        type: compose_type(type),
+        type: compose_type(aggregate_type(resource, aggregate)),
         visibility: if(public?, do: :public, else: :private),
         name: Atom.to_string(name)
       }
+    end
+  end
+
+  @spec aggregate_type(resource :: Ash.Resource.t(), aggregate :: Aggregate.t()) ::
+          Ash.Type.t() | nil
+  defp aggregate_type(resource, aggregate) do
+    case Ash.Resource.Info.aggregate_type(resource, aggregate) do
+      {:ok, type} -> type
+      # Custom aggregates can't be resolved by kind, they declare their type explicitly
+      {:error, _reason} -> Ash.Type.get_type(aggregate.type)
     end
   end
 
