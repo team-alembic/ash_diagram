@@ -171,9 +171,12 @@ defmodule AshDiagram.Data.PolicySimulationTest do
       assert %Flowchart{} = diagram
     end
 
-    test "for_field/3 raises with invalid field" do
+    # Passed through the test context so the compile-time type checker
+    # doesn't flag the deliberately invalid argument.
+    @tag field: "invalid_field"
+    test "for_field/3 raises with invalid field", %{field: field} do
       assert_raise ArgumentError, fn ->
-        PolicySimulation.for_field(Org, "invalid_field")
+        PolicySimulation.for_field(Org, field)
       end
     end
   end
