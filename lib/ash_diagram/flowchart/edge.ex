@@ -63,7 +63,7 @@ defmodule AshDiagram.Flowchart.Edge do
     cond do
       String.ends_with?(syntax, ">") ->
         base_length = String.length(syntax) - 1
-        <<base::binary-size(base_length), _::binary>> = syntax
+        <<base::binary-size(^base_length), _::binary>> = syntax
         [base, ">|", label, "|"]
 
       String.contains?(syntax, "o") or String.contains?(syntax, "x") ->
