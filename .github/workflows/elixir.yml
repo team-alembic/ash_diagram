@@ -12,6 +12,9 @@ jobs:
     with:
       postgres: false
       doctor: true
+      # mix_audit was dropped for hex.audit, which covers dependency advisories
+      deps-audit: false
+      hex-audit: true
       ex-unit-args: "--exclude visual"
       community-files: true
       conventional-commit: false

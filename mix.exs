@@ -56,7 +56,6 @@ defmodule AshDiagram.MixProject do
       {:ex_cmd, "~> 0.16", optional: true},
       {:ex_doc, "~> 0.38", only: [:dev, :test], runtime: false},
       {:git_ops, "~> 2.4", only: [:dev, :test], runtime: false},
-      {:mix_audit, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:picosat_elixir, "~> 0.2", only: [:dev, :test]},
       {:req, "~> 0.5", optional: true},
