@@ -1,5 +1,7 @@
 import Config
 
+config :ash, default_string_length_count: :codepoints
+
 config :logger, level: :info
 
 case config_env() do
