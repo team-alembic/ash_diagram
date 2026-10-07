@@ -50,8 +50,7 @@ defmodule AshDiagram.EntityRelationship.Attribute do
          is_primary_key?: false,
          is_foreign_key?: false,
          is_unique_key?: false
-       }),
-       do: []
+       }), do: []
 
   defp compose_key_type(%__MODULE__{} = attribute) do
     [
