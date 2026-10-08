@@ -15,7 +15,9 @@ jobs:
       # mix_audit was dropped for hex.audit, which covers dependency advisories
       deps-audit: false
       hex-audit: true
-      ex-unit-args: "--exclude visual"
+      # Tests tagged :external render through mmdc or mermaid.ink. CI has no
+      # mmdc, so these tests would depend on the mermaid.ink web service.
+      ex-unit-args: "--exclude visual --exclude external"
       community-files: true
       conventional-commit: false
       tenants: false

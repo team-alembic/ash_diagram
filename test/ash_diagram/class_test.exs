@@ -7,6 +7,7 @@ defmodule AshDiagram.ClassTest do
   doctest Class
 
   describe inspect(&Class.compose/1) do
+    @tag :external
     test "renders basic diagram" do
       diagram = %Class{
         title: "Order example",

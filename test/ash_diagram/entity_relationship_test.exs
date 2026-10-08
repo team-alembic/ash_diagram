@@ -6,6 +6,7 @@ defmodule AshDiagram.EntityRelationshipTest do
   doctest EntityRelationship
 
   describe inspect(&EntityRelationship.compose/1) do
+    @tag :external
     test "renders basic diagram" do
       diagram = %EntityRelationship{
         title: "Order example",
@@ -45,6 +46,7 @@ defmodule AshDiagram.EntityRelationshipTest do
       assert AshDiagram.render(diagram, format: :svg)
     end
 
+    @tag :external
     test "renders complex diagram" do
       diagram = %EntityRelationship{
         entries: [
