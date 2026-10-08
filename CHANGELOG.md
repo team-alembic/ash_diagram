@@ -5,6 +5,17 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [v0.2.3](https://github.com/team-alembic/ash_diagram/compare/v0.2.2...v0.2.3) (2026-10-08)
+
+
+
+
+### Bug Fixes:
+
+* pin base_length in flowchart edge label match by [@joshprice](https://github.com/joshprice)
+
+* resolve aggregate types in class and ER diagrams by [@joshprice](https://github.com/joshprice)
+
 ## [v0.2.2](https://github.com/team-alembic/ash_diagram/compare/v0.2.1...v0.2.2) (2026-07-01)
 
 
