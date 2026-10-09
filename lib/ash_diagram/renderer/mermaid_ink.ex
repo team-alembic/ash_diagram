@@ -62,6 +62,10 @@ with {:module, Req} <- Code.ensure_compiled(Req) do
     @doc false
     @impl AshDiagram.Renderer
     def render(diagram, options) do
+      # Req starts its Finch pool when the :req application starts. A mix task
+      # does not start the applications, so this call starts :req.
+      {:ok, _started} = Application.ensure_all_started(:req)
+
       diagram
       |> build_uri(options)
       |> Req.get!()
