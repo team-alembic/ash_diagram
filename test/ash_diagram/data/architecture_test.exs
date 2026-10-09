@@ -7,6 +7,8 @@ defmodule AshDiagram.Data.ArchitectureTest do
   alias AshDiagram.Data.Architecture
   alias AshDiagram.Flow.NoDomainResource
   alias AshDiagram.Flow.Org
+  alias AshDiagram.Flow.SharedDomainA
+  alias AshDiagram.Flow.SharedDomainB
   alias AshDiagram.Flow.User
 
   doctest Architecture
@@ -67,6 +69,19 @@ defmodule AshDiagram.Data.ArchitectureTest do
   end
 
   describe inspect(&Architecture.for_domains/1) do
+    test "draws a resource that two domains list only once, with the extensions of both domains" do
+      composed =
+        [SharedDomainA, SharedDomainB]
+        |> Architecture.for_domains()
+        |> AshDiagram.compose()
+        |> IO.iodata_to_binary()
+
+      assert composed |> String.split(~s|System("ash_diagram_flow_no_domain_resource"|) |> length() == 2
+      refute composed =~ ~s|[""]|
+      # AshDiagram.DummyExtension, from SharedDomainA, adds this entry.
+      assert composed =~ "♡"
+    end
+
     test "creates architecture diagram from domains" do
       diagram = Architecture.for_domains([AshDiagram.Flow.Domain])
 

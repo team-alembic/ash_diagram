@@ -6,6 +6,8 @@ defmodule AshDiagram.Data.Extension do
   data to the diagrams.
   """
 
+  alias Ash.Resource.Info
+
   @type creator() ::
           AshDiagram.Data.EntityRelationship
           | AshDiagram.Data.Class
@@ -48,5 +50,24 @@ defmodule AshDiagram.Data.Extension do
         reduce: diagram do
       diagram -> extension.extend_diagram(creator, diagram)
     end
+  end
+
+  @doc false
+  @spec collect(resources :: [Ash.Resource.t()], domains :: [Ash.Domain.t()]) :: [module()]
+  def collect(resources, domains \\ []) do
+    resource_extensions = Enum.flat_map(resources, &Info.extensions/1)
+
+    # `domains` are the domains that the caller gives, for example to
+    # `for_domains/2`. A resource with `domain: nil` has no domain of its own,
+    # so only `domains` can give the extensions of the domains that list it.
+    domain_extensions =
+      resources
+      |> Enum.map(&Info.domain/1)
+      |> Enum.concat(domains)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+      |> Enum.flat_map(&Ash.Domain.Info.extensions/1)
+
+    Enum.uniq(resource_extensions ++ domain_extensions)
   end
 end

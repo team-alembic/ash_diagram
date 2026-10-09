@@ -97,8 +97,9 @@ defmodule AshDiagram.Data.Class do
   """
   @spec for_domains(domains :: [Ash.Domain.t()], options :: options()) :: AshDiagram.t()
   def for_domains(domains, options \\ []),
-    do: domains |> Enum.flat_map(&Info.resources/1) |> for_resources(options)
+    do: domains |> Enum.flat_map(&Info.resources/1) |> Enum.uniq() |> build(domains, options)
 
+  # A resource with `domain: nil` can be in more than one of the domains.
   @doc """
   Generates a class diagram for the given Ash resources.
 
@@ -130,14 +131,21 @@ defmodule AshDiagram.Data.Class do
 
   """
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
-  def for_resources(resources, options \\ []) do
+  def for_resources(resources, options \\ []), do: build(resources, [], options)
+
+  @spec build(
+          resources :: [Ash.Resource.t()],
+          domains :: [Ash.Domain.t()],
+          options :: options()
+        ) :: AshDiagram.t()
+  defp build(resources, domains, options) do
     options = Keyword.merge(@default_options, options)
     entity_names = build_entity_names(resources, options[:name])
     access_functions = build_access_functions(options[:show_private?])
 
     entries = build_class_entries(resources, entity_names, access_functions)
     relationships = build_relationships(resources, access_functions)
-    extensions = collect_extensions(resources)
+    extensions = Extension.collect(resources, domains)
 
     Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
       entries: entries ++ relationships
@@ -287,21 +295,6 @@ defmodule AshDiagram.Data.Class do
       },
       style: if(public?, do: :solid, else: :dashed)
     }
-  end
-
-  @spec collect_extensions(resources :: [Ash.Resource.t()]) :: [module()]
-  defp collect_extensions(resources) do
-    resource_extensions = Enum.flat_map(resources, &Ash.Resource.Info.extensions/1)
-
-    domain_extensions =
-      resources
-      |> Enum.map(&Ash.Resource.Info.domain/1)
-      # A resource with `domain: nil` has no domain of its own, so it adds no
-      # domain extensions.
-      |> Enum.reject(&is_nil/1)
-      |> Enum.flat_map(&Info.extensions/1)
-
-    Enum.uniq(resource_extensions ++ domain_extensions)
   end
 
   @spec compose_action(action :: Ash.Resource.Actions.action(), self_name :: iodata()) ::

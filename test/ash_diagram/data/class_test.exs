@@ -9,6 +9,8 @@ defmodule AshDiagram.Data.ClassTest do
   alias AshDiagram.Data.Class
   alias AshDiagram.Flow.NoDomainResource
   alias AshDiagram.Flow.Org
+  alias AshDiagram.Flow.SharedDomainA
+  alias AshDiagram.Flow.SharedDomainB
   alias AshDiagram.Flow.User
 
   doctest Class
@@ -126,6 +128,21 @@ defmodule AshDiagram.Data.ClassTest do
                  }
                  `AshDiagram.Aggregates.Author` "*" o--* "0..1" `AshDiagram.Aggregates.Post`
                """
+    end
+  end
+
+  describe inspect(&Class.for_domains/1) do
+    test "draws a resource that two domains list only once, with the extensions of both domains" do
+      composed =
+        [SharedDomainA, SharedDomainB]
+        |> Class.for_domains()
+        |> AshDiagram.compose()
+        |> IO.iodata_to_binary()
+
+      assert composed |> String.split("class `AshDiagram.Flow.NoDomainResource`") |> length() == 2
+      refute composed =~ ~s|[""]|
+      # AshDiagram.DummyExtension, from SharedDomainA, adds this entry.
+      assert composed =~ "♡"
     end
   end
 end
