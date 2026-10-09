@@ -69,17 +69,7 @@ defmodule AshDiagram.Data.Policy do
         create_policies_diagram(resource, policies, options)
       end
 
-    resource_extensions = Ash.Resource.Info.extensions(resource)
-
-    # A resource with `domain: nil` has no domain of its own, so it adds no
-    # domain extensions.
-    domain_extensions =
-      case Ash.Resource.Info.domain(resource) do
-        nil -> []
-        domain -> Ash.Domain.Info.extensions(domain)
-      end
-
-    extensions = Enum.uniq(resource_extensions ++ domain_extensions)
+    extensions = Extension.collect([resource])
 
     Extension.construct_diagram(__MODULE__, extensions, diagram)
   end
