@@ -24,19 +24,21 @@ defmodule Mix.AshDiagram do
 
     ## Images
 
-    The image formats use the renderer that `AshDiagram.Renderer` selects:
+    The image formats need a renderer. The task uses the first one of these:
 
-      1. The renderer in `config :ash_diagram, :renderer`, when it is set.
-      2. `AshDiagram.Renderer.CLI`, when `:ex_cmd` is a dependency and
-         `mmdc` is on the `PATH`.
-      3. `AshDiagram.Renderer.MermaidInk`, when `:req` is a dependency. This
-         renderer sends the diagram to the third-party mermaid.ink web
-         service.
+      1. The renderer in `config :ash_diagram, :renderer`.
+      2. `AshDiagram.Renderer.CLI`, when `:ex_cmd` is a dependency and `mmdc`
+         is on the `PATH`. This renderer works on your machine.
 
-    To keep your diagrams on your machine, add `:ex_cmd` to your
-    dependencies, install `mmdc`, and set:
+    When neither is available, the task stops. It never selects the
+    third-party mermaid.ink web service by itself, because that service gets
+    a copy of each diagram. To use mermaid.ink, set:
 
-        config :ash_diagram, :renderer, AshDiagram.Renderer.CLI
+        config :ash_diagram, :renderer, AshDiagram.Renderer.MermaidInk
+
+    Set the renderer in `config/config.exs` or in an environment file such as
+    `config/dev.exs`. The task does not load `config/runtime.exs`, because
+    that file often needs the secrets of a running system.
 
     The task renders at most #{@render_concurrency} images at the same time.
     When `mermaidConfig.json` is in the current directory, the task gives it
@@ -76,6 +78,18 @@ defmodule Mix.AshDiagram do
   end
 
   @doc false
+  @spec select(modules :: [module()], only :: [Path.t()] | nil) :: [module()]
+  def select(modules, only) do
+    selected = Enum.filter(modules, &selected?(&1, only))
+
+    if only != nil and selected == [] do
+      Mix.shell().info("No module is in the files that --only gives: #{Enum.join(only, ", ")}")
+    end
+
+    selected
+  end
+
+  @doc false
   @spec selected?(module :: module(), only :: [Path.t()] | nil) :: boolean()
   def selected?(_module, nil), do: true
   def selected?(module, only), do: Path.expand(source(module)) in only
@@ -104,8 +118,8 @@ defmodule Mix.AshDiagram do
   # Writes one diagram for each module, and returns the paths in the order of
   # `modules`. `build` gives the diagram of a module and the message to print.
   # A module that is in `modules` more than once gets one file. When a diagram
-  # fails, the function still writes the others. Then it raises one error that
-  # contains every failure.
+  # fails, or two modules get the same file, the function still writes the
+  # others. Then it raises one error that contains every failure.
   @doc false
   @spec write_all(
           modules :: [module()],
@@ -114,11 +128,13 @@ defmodule Mix.AshDiagram do
           build :: (module() -> {AshDiagram.t(), String.t()})
         ) :: [Path.t()]
   def write_all(modules, suffix, format, build) do
-    jobs =
+    check_renderer!(format)
+
+    {jobs, conflicts} =
       modules
       |> Enum.uniq()
       |> Enum.map(&{&1, file(source(&1), suffix, extension(format))})
-      |> check_conflicts!()
+      |> split_conflicts()
 
     options = render_options(format)
 
@@ -130,34 +146,75 @@ defmodule Mix.AshDiagram do
       )
       |> Enum.map(fn {:ok, result} -> result end)
 
-    case for {:error, message} <- results, do: message do
+    case conflicts ++ for({:error, message} <- results, do: message) do
       [] -> for {:ok, path} <- results, do: path
       errors -> Mix.raise(Enum.join(errors, "\n\n"))
     end
   end
 
-  # For example, two modules in one source file get the same diagram file.
-  # Without this check, they write to it at the same time, and one diagram is
-  # lost.
-  @spec check_conflicts!(jobs :: [{module(), Path.t()}]) :: [{module(), Path.t()}]
-  defp check_conflicts!(jobs) do
-    conflicts =
-      jobs
-      |> Enum.group_by(fn {_module, path} -> path end, fn {module, _path} -> module end)
-      |> Enum.filter(&match?({_path, [_first, _second | _rest]}, &1))
+  # `AshDiagram.Renderer` selects mermaid.ink when no local renderer is
+  # available. mermaid.ink is a third-party service, so the tasks send a
+  # diagram there only when the config selects it.
+  @spec check_renderer!(format :: String.t()) :: :ok
+  defp check_renderer!(format) when is_map_key(@render_formats, format) do
+    cond do
+      match?({:ok, _renderer}, Application.fetch_env(:ash_diagram, :renderer)) ->
+        :ok
 
-    if conflicts != [] do
-      Mix.raise("""
-      More than one module writes to the same diagram file:
+      local_renderer?() ->
+        :ok
 
-      #{Enum.map_join(conflicts, "\n", fn {path, modules} -> "  #{path}: #{Enum.map_join(modules, ", ", &inspect/1)}" end)}
+      true ->
+        Mix.raise("""
+        No local renderer is available for the `#{format}` format.
 
-      The file name comes from the source file name, so `--only` cannot
-      separate these modules. Put each module in its own source file.
-      """)
+        The task does not send your diagrams to the third-party mermaid.ink web
+        service, unless your config selects it. Do one of these:
+
+          * To render on your machine, add `:ex_cmd` to your dependencies and
+            install `mmdc` (npm install -g @mermaid-js/mermaid-cli). Make sure
+            that `mmdc` is on the PATH.
+
+          * To render with mermaid.ink, add this line to config/config.exs:
+
+                config :ash_diagram, :renderer, AshDiagram.Renderer.MermaidInk
+        """)
     end
+  end
 
-    jobs
+  defp check_renderer!(_format), do: :ok
+
+  @spec local_renderer?() :: boolean()
+  defp local_renderer? do
+    cli = AshDiagram.Renderer.CLI
+    Code.ensure_loaded?(cli) and cli.supported?()
+  end
+
+  # For example, two modules in one source file get the same diagram file. If
+  # both wrote to it at the same time, one diagram would be lost. So neither
+  # module is written, and each conflict becomes an error message.
+  @spec split_conflicts(jobs :: [{module(), Path.t()}]) :: {[{module(), Path.t()}], [String.t()]}
+  defp split_conflicts(jobs) do
+    by_path =
+      Enum.group_by(jobs, fn {_module, path} -> path end, fn {module, _path} -> module end)
+
+    {unique, shared} =
+      Enum.split_with(jobs, fn {_module, path} -> match?([_module], by_path[path]) end)
+
+    errors =
+      shared
+      |> Enum.map(fn {_module, path} -> path end)
+      |> Enum.uniq()
+      |> Enum.map(fn path ->
+        """
+        The task did not write #{path}, because more than one module gets \
+        this file name: #{Enum.map_join(by_path[path], ", ", &inspect/1)}. The \
+        file name comes from the source file name, so `--only` cannot separate \
+        these modules. Put each module in its own source file.\
+        """
+      end)
+
+    {unique, errors}
   end
 
   @spec write_one(
@@ -172,11 +229,12 @@ defmodule Mix.AshDiagram do
     File.write!(path, content(format, diagram, options))
     Mix.shell().info(message <> " (#{path})")
     {:ok, path}
-  rescue
-    error ->
+  catch
+    # Also an exit or a throw, so that one failure cannot stop the task.
+    kind, reason ->
       {:error,
        "The task could not write the diagram of #{inspect(module)} to #{path}:\n" <>
-         Exception.message(error)}
+         Exception.format(kind, reason, __STACKTRACE__)}
   end
 
   @spec extension(format :: String.t()) :: String.t()

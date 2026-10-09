@@ -13,7 +13,9 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
     * `--type` - `class`, `er` or `architecture`. Defaults to `class`.
       `architecture` writes a C4 diagram.
     * `--only` - generates only for the domain in the given source file.
-      Repeat the option for more than one domain.
+      Repeat the option for more than one domain. The path is relative to the
+      current directory. In an umbrella project, the task runs in the
+      directory of each app, so give the path relative to the app directory.
     * `--format` - `plain`, `md`, `svg`, `pdf` or `png`. Defaults to `plain`.
       See "Formats".
 
@@ -52,12 +54,12 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
     only = Mix.AshDiagram.only(opts)
 
     # The options are validated first, so that a usage error shows before a
-    # long compile. "app.config" compiles the project and loads its config,
-    # which can set the renderer.
-    Mix.Task.run("app.config")
+    # long compile. The task does not run "app.config", because
+    # config/runtime.exs often needs the secrets of a running system.
+    Mix.Task.run("compile")
 
     Mix.AshDiagram.domains()
-    |> Enum.filter(&Mix.AshDiagram.selected?(&1, only))
+    |> Mix.AshDiagram.select(only)
     |> Mix.AshDiagram.write_all(suffix, format, fn domain ->
       {creator.for_domains([domain]), "Generated #{label} for #{inspect(domain)}"}
     end)
@@ -72,7 +74,7 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagrams do
       :error ->
         Mix.raise("""
         Invalid resource diagram type `#{type}`.
-        Valid options are `class`, `er` or `architecture`.
+        Valid options are #{@types |> Map.keys() |> Enum.map_join(", ", &"`#{&1}`")}.
         """)
     end
   end

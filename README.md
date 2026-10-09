@@ -104,6 +104,10 @@ mix ash_diagram.generate_policy_charts --all
 | `mix ash.generate_resource_diagrams` | `mix ash_diagram.generate_resource_diagrams` |
 | `mix ash.generate_policy_charts` | `mix ash_diagram.generate_policy_charts` |
 
+The image formats (`svg`, `pdf` and `png`) need `mmdc` and the `:ex_cmd`
+dependency, or a renderer in your config. The tasks do not send a diagram to
+the mermaid.ink web service unless your config selects it.
+
 Run `mix help <task>` for all the options.
 
 ### Integration with Clarity

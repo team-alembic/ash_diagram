@@ -13,7 +13,9 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyCharts do
   ## Command line options
 
     * `--only` - generates only for the resource in the given source file.
-      Repeat the option for more than one resource.
+      Repeat the option for more than one resource. The path is relative to
+      the current directory. In an umbrella project, the task runs in the
+      directory of each app, so give the path relative to the app directory.
     * `--all` - generates for every resource. Give `--only` or `--all`.
     * `--format` - `plain`, `md`, `svg`, `pdf` or `png`. Defaults to `plain`.
       See "Formats".
@@ -50,13 +52,14 @@ defmodule Mix.Tasks.AshDiagram.GeneratePolicyCharts do
     format = opts |> Keyword.get(:format, "plain") |> Mix.AshDiagram.validate_format!()
 
     # The options are validated first, so that a usage error shows before a
-    # long compile. "app.config" compiles the project and loads its config,
-    # which can set the renderer.
-    Mix.Task.run("app.config")
+    # long compile. The task does not run "app.config", because
+    # config/runtime.exs often needs the secrets of a running system.
+    Mix.Task.run("compile")
 
     Mix.AshDiagram.domains()
     |> Enum.flat_map(&Info.resources/1)
-    |> Enum.filter(&(Authorizer in Spark.extensions(&1) and Mix.AshDiagram.selected?(&1, only)))
+    |> Enum.filter(&(Authorizer in Spark.extensions(&1)))
+    |> Mix.AshDiagram.select(only)
     |> Mix.AshDiagram.write_all("policy-flowchart", format, fn resource ->
       {Policy.for_resource(resource), "Generated Mermaid Flow Chart for #{inspect(resource)}"}
     end)
