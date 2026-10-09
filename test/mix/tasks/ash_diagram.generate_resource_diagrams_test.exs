@@ -66,6 +66,7 @@ defmodule Mix.Tasks.AshDiagram.GenerateResourceDiagramsTest do
 
     refute File.exists?(output("domain-mermaid-class-diagram.mmd"))
     refute_received {:mix_shell, :info, ["Generated" <> _rest]}
+    assert_received {:mix_shell, :info, ["No module is in the files that --only gives: " <> _paths]}
   end
 
   test "raises on an unknown type" do

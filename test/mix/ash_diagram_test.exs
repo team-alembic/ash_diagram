@@ -80,6 +80,18 @@ defmodule Mix.AshDiagramTest do
     end
   end
 
+  describe "select/2" do
+    test "gives the modules in the --only files" do
+      assert Mix.AshDiagram.select([Domain, User], [Path.expand("test/support/flow/user.ex")]) == [User]
+      refute_received {:mix_shell, :info, _message}
+    end
+
+    test "says so when no module is in the --only files" do
+      assert Mix.AshDiagram.select([Domain], [Path.expand("lib/typo.ex")]) == []
+      assert_received {:mix_shell, :info, ["No module is in the files that --only gives: " <> _paths]}
+    end
+  end
+
   describe "selected?/2" do
     test "selects every module when only is nil" do
       assert Mix.AshDiagram.selected?(Domain, nil)
@@ -166,22 +178,26 @@ defmodule Mix.AshDiagramTest do
       refute_received {:mix_shell, :info, ["Generated AshDiagram.Flow.Domain" <> _rest]}
     end
 
-    test "raises before it writes when two modules write to the same file" do
-      assert_raise Mix.Error, ~r/More than one module writes to the same diagram file/, fn ->
-        Mix.AshDiagram.write_all([One, Two], "test-flow", "plain", &build/1)
+    test "writes the other diagrams when two modules get the same file, then raises" do
+      message =
+        ~r/did not write .*ash_diagram_test-test-flow.mmd, because more than one module gets this file name: Mix.AshDiagramTest.One, Mix.AshDiagramTest.Two/
+
+      assert_raise Mix.Error, message, fn ->
+        Mix.AshDiagram.write_all([One, Two, Domain], "test-flow", "plain", &build/1)
       end
 
+      assert File.exists?(output("domain-test-flow.mmd"))
       refute File.exists?(Path.expand("ash_diagram_test-test-flow.mmd", __DIR__))
     end
 
-    test "writes the other diagrams when one fails, then raises with the module and the file" do
+    test "writes the other diagrams when one raises, then raises with the module, the file and the stacktrace" do
       build = fn
         User -> raise "the renderer failed"
         module -> build(module)
       end
 
       message =
-        ~r/The task could not write the diagram of AshDiagram.Flow.User to .*user-test-flow.mmd:\nthe renderer failed/
+        ~r/could not write the diagram of AshDiagram.Flow.User to .*user-test-flow.mmd:\n\*\* \(RuntimeError\) the renderer failed\n.*ash_diagram_test.exs/s
 
       assert_raise Mix.Error, message, fn ->
         Mix.AshDiagram.write_all([User, Domain], "test-flow", "plain", build)
@@ -189,6 +205,49 @@ defmodule Mix.AshDiagramTest do
 
       assert File.exists?(output("domain-test-flow.mmd"))
       refute File.exists?(output("user-test-flow.mmd"))
+    end
+
+    test "writes the other diagrams when one exits, then raises" do
+      build = fn
+        User -> exit(:renderer_down)
+        module -> build(module)
+      end
+
+      assert_raise Mix.Error, ~r/AshDiagram.Flow.User.*\(exit\) :renderer_down/s, fn ->
+        Mix.AshDiagram.write_all([User, Domain], "test-flow", "plain", build)
+      end
+
+      assert File.exists?(output("domain-test-flow.mmd"))
+    end
+
+    test "stops before an image when no renderer is set and mmdc is not available" do
+      Application.delete_env(:ash_diagram, :renderer)
+      path = System.get_env("PATH")
+      System.put_env("PATH", "")
+
+      try do
+        assert_raise Mix.Error, ~r/No local renderer is available for the `svg` format/, fn ->
+          Mix.AshDiagram.write_all([Domain], "test-flow", "svg", &build/1)
+        end
+      after
+        System.put_env("PATH", path)
+      end
+
+      refute File.exists?(output("domain-test-flow.svg"))
+    end
+
+    test "does not need a renderer for plain and md" do
+      Application.delete_env(:ash_diagram, :renderer)
+      path = System.get_env("PATH")
+      System.put_env("PATH", "")
+
+      try do
+        Mix.AshDiagram.write_all([Domain], "test-flow", "md", &build/1)
+      after
+        System.put_env("PATH", path)
+      end
+
+      assert File.exists?(output("domain-test-flow.md"))
     end
   end
 end
