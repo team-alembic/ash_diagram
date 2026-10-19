@@ -34,6 +34,14 @@ defmodule AshDiagram.Embedded.Post do
       constraints instance_of: Meta
       public?(true)
     end
+
+    attribute :stats, AshDiagram.Embedded.Stats do
+      public?(true)
+    end
+
+    attribute :raw, :struct do
+      public?(true)
+    end
   end
 
   actions do

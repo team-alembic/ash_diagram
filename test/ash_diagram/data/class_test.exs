@@ -177,17 +177,28 @@ defmodule AshDiagram.Data.ClassTest do
                    +Author author
                    +?Author editor
                    +?Meta meta
+                   +?Stats stats
+                   +?Struct raw
                    +summarize(?Meta[] previous) : action~Meta~
                  }
                  class `AshDiagram.Embedded.Meta`["Meta"] {
                    +Integer views
                    +?String[] tags
                  }
+                 class `AshDiagram.Embedded.Reaction`["Reaction"] {
+                   +String emoji
+                 }
+                 class `AshDiagram.Embedded.Stats`["Stats"] {
+                   +Integer likes
+                   +?Reaction[] reactions
+                 }
                  `AshDiagram.Embedded.Comment` "0..1" *-- "1" `AshDiagram.Embedded.Author`
                  `AshDiagram.Embedded.Post` "0..1" *-- "1" `AshDiagram.Embedded.Author`
                  `AshDiagram.Embedded.Post` "0..1" *-- "0..1" `AshDiagram.Embedded.Author`
                  `AshDiagram.Embedded.Post` "1" *-- "*" `AshDiagram.Embedded.Comment`
                  `AshDiagram.Embedded.Post` "1" *-- "0..1" `AshDiagram.Embedded.Meta`
+                 `AshDiagram.Embedded.Post` "1" *-- "0..1" `AshDiagram.Embedded.Stats`
+                 `AshDiagram.Embedded.Stats` "1" *-- "*" `AshDiagram.Embedded.Reaction`
                """
     end
   end
