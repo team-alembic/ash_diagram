@@ -41,6 +41,7 @@ defmodule AshDiagram.Data.Architecture do
   alias AshDiagram.C4.Element
   alias AshDiagram.C4.Relationship
   alias AshDiagram.Data.Extension
+  alias AshDiagram.Util
 
   @typedoc """
   Configuration option for architecture diagram generation.
@@ -157,7 +158,7 @@ defmodule AshDiagram.Data.Architecture do
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)
 
-    entity_names = build_entity_names(resources, options[:name])
+    entity_names = Util.module_names(resources, options[:name])
     access_functions = build_access_functions(options[:show_private?])
 
     entries = build_context_entries(resources, entity_names, access_functions)
@@ -170,30 +171,6 @@ defmodule AshDiagram.Data.Architecture do
       title: title,
       entries: entries
     })
-  end
-
-  @spec build_entity_names(resources :: [Ash.Resource.t()], name_option :: :full | :short) :: %{
-          Ash.Resource.t() => iodata()
-        }
-  defp build_entity_names(resources, :full) do
-    Map.new(resources, &{&1, inspect(&1)})
-  end
-
-  defp build_entity_names(resources, :short) do
-    common_name_parts = common_prefix(resources)
-
-    Map.new(resources, fn resource ->
-      module_parts = Module.split(resource)
-      dropped_parts = Enum.drop(module_parts, length(common_name_parts))
-
-      shortened_name =
-        case dropped_parts do
-          [] -> List.last(module_parts) || inspect(resource)
-          parts -> Enum.intersperse(parts, ".")
-        end
-
-      {resource, shortened_name}
-    end)
   end
 
   @spec build_access_functions(show_private? :: boolean()) ::
@@ -440,24 +417,4 @@ defmodule AshDiagram.Data.Architecture do
 
   @spec relationship_description(Relationships.relationship()) :: String.t()
   defp relationship_description(%{type: type}), do: "#{type} relationship"
-
-  @spec common_prefix(modules :: [module()]) :: [String.t()]
-  defp common_prefix(modules)
-  defp common_prefix([]), do: []
-
-  defp common_prefix([module]) do
-    parts = Module.split(module)
-    Enum.take(parts, length(parts) - 1)
-  end
-
-  defp common_prefix(modules) do
-    modules
-    |> Enum.map(&Module.split/1)
-    |> Enum.reduce(fn list, acc ->
-      acc
-      |> Enum.zip(list)
-      |> Enum.take_while(fn {a, b} -> a == b end)
-      |> Enum.map(&elem(&1, 1))
-    end)
-  end
 end
