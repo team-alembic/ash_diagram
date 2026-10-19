@@ -33,8 +33,10 @@ defmodule AshDiagram.Data.Class do
   Available options:
   - `{:name, :full | :short}` - How to display resource names. `:full` shows complete module names, `:short` shows shortened names with common prefixes removed
   - `{:show_private?, boolean()}` - Whether to include private attributes, calculations, aggregates, and relationships in the diagram
+  - `{:namespace, :domain | nil}` - How to group classes into Mermaid namespaces. `:domain` groups resources by their Ash domain, `nil` (default) disables grouping
   """
-  @type option() :: {:name, :full | :short} | {:show_private?, boolean()}
+  @type option() ::
+          {:name, :full | :short} | {:show_private?, boolean()} | {:namespace, :domain | nil}
 
   @typedoc """
   List of configuration options for class diagram generation.
@@ -43,7 +45,8 @@ defmodule AshDiagram.Data.Class do
 
   @default_options [
     name: :short,
-    show_private?: false
+    show_private?: false,
+    namespace: nil
   ]
 
   @doc """
@@ -128,6 +131,9 @@ defmodule AshDiagram.Data.Class do
       # Generate diagram with only public elements
       AshDiagram.Data.Class.for_resources([MyApp.User], show_private?: false)
 
+      # Group classes into one namespace per domain
+      AshDiagram.Data.Class.for_resources([MyApp.User, MyApp.Invoice], namespace: :domain)
+
   """
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
   def for_resources(resources, options \\ []) do
@@ -135,7 +141,11 @@ defmodule AshDiagram.Data.Class do
     entity_names = build_entity_names(resources, options[:name])
     access_functions = build_access_functions(options[:show_private?])
 
-    entries = build_class_entries(resources, entity_names, access_functions)
+    entries =
+      resources
+      |> build_class_entries(entity_names, access_functions)
+      |> build_namespaces(resources, options[:namespace], options[:name])
+
     relationships = build_relationships(resources, access_functions)
     extensions = collect_extensions(resources)
 
@@ -199,6 +209,38 @@ defmodule AshDiagram.Data.Class do
         members: attributes ++ calculations ++ aggregates ++ actions
       }
     end
+  end
+
+  @spec build_namespaces(
+          classes :: [DiagramImpl.Class.t()],
+          resources :: [Ash.Resource.t()],
+          namespace_option :: :domain | nil,
+          name_option :: :full | :short
+        ) :: [DiagramImpl.Class.t() | DiagramImpl.Namespace.t()]
+  defp build_namespaces(classes, resources, namespace_option, name_option)
+  defp build_namespaces(classes, _resources, nil, _name_option), do: classes
+
+  defp build_namespaces(classes, resources, :domain, name_option) do
+    domains = Map.new(resources, &{inspect(&1), Ash.Resource.Info.domain(&1)})
+
+    domain_names =
+      domains
+      |> Map.values()
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+      |> build_entity_names(name_option)
+
+    {grouped, ungrouped} = Enum.split_with(classes, &domains[&1.id])
+
+    namespaces =
+      grouped
+      |> Enum.group_by(&domains[&1.id])
+      |> Enum.sort()
+      |> Enum.map(fn {domain, entries} ->
+        %DiagramImpl.Namespace{id: domain_names[domain], entries: entries}
+      end)
+
+    namespaces ++ ungrouped
   end
 
   @spec build_attributes(attributes :: [Attribute.t()]) :: [DiagramImpl.Field.t()]
@@ -348,14 +390,10 @@ defmodule AshDiagram.Data.Class do
   defp common_prefix(modules)
   defp common_prefix([]), do: []
 
-  defp common_prefix([module]) do
-    parts = Module.split(module)
-    Enum.take(parts, length(parts) - 1)
-  end
-
   defp common_prefix(modules) do
+    # Compare namespaces only, so every name keeps at least its last part
     modules
-    |> Enum.map(&Module.split/1)
+    |> Enum.map(&namespace_parts/1)
     |> Enum.reduce(fn list, acc ->
       acc
       |> Enum.zip(list)
@@ -363,6 +401,9 @@ defmodule AshDiagram.Data.Class do
       |> Enum.map(&elem(&1, 1))
     end)
   end
+
+  @spec namespace_parts(module :: module()) :: [String.t()]
+  defp namespace_parts(module), do: module |> Module.split() |> Enum.drop(-1)
 
   @spec normalize_relationship(relationship :: DiagramImpl.Relationship.t()) ::
           DiagramImpl.Relationship.t()
