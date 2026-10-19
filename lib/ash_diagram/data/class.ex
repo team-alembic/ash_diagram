@@ -14,6 +14,8 @@ defmodule AshDiagram.Data.Class do
   - **Actions**: Resource actions (create, read, update, delete, action) as methods
   - **Relationships**: Ash relationships with proper cardinality mapping
   - **Embedded Resources**: Embedded resources used as attribute types, shown as compositions
+  - **Typed Structs**: `Ash.TypedStruct` modules used as attribute types, shown as compositions;
+    `:struct` types are named after their `instance_of` constraint
   - **Visibility**: Respects Ash `public?` settings for attributes and relationships
   - **Extensions**: Automatically includes diagrams from Ash extensions
 
@@ -139,10 +141,13 @@ defmodule AshDiagram.Data.Class do
       access_functions = build_access_functions(options[:show_private?])
 
     compositions = Types.compositions(resources, attribute_fun)
-    resources = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 1)))
-    entity_names = build_entity_names(resources, options[:name])
+    modules = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 1)))
+    {typed_structs, resources} = Enum.split_with(modules, &Types.typed_struct?/1)
+    entity_names = build_entity_names(modules, options[:name])
 
-    entries = build_class_entries(resources, entity_names, access_functions)
+    entries =
+      build_class_entries(resources, entity_names, access_functions) ++
+        build_typed_struct_entries(typed_structs, entity_names)
 
     relationships =
       build_relationships(resources, access_functions) ++ build_compositions(compositions)
@@ -211,11 +216,39 @@ defmodule AshDiagram.Data.Class do
     end
   end
 
+  @spec build_typed_struct_entries(
+          typed_structs :: [module()],
+          entity_names :: %{module() => iodata()}
+        ) :: [DiagramImpl.Class.t()]
+  defp build_typed_struct_entries(typed_structs, entity_names) do
+    for typed_struct <- Enum.sort(typed_structs) do
+      %DiagramImpl.Class{
+        id: inspect(typed_struct),
+        label: entity_names[typed_struct],
+        members:
+          for %{name: name, type: type, constraints: constraints, allow_nil?: allow_nil?} <-
+                Ash.TypedStruct.Info.fields(typed_struct) do
+            %DiagramImpl.Field{
+              type: compose_type(type, constraints, allow_nil?),
+              visibility: :public,
+              name: Atom.to_string(name)
+            }
+          end
+      }
+    end
+  end
+
   @spec build_attributes(attributes :: [Attribute.t()]) :: [DiagramImpl.Field.t()]
   defp build_attributes(attributes) do
-    for %Attribute{type: type, name: name, allow_nil?: allow_nil?, public?: public?} <- attributes do
+    for %Attribute{
+          type: type,
+          constraints: constraints,
+          name: name,
+          allow_nil?: allow_nil?,
+          public?: public?
+        } <- attributes do
       %DiagramImpl.Field{
-        type: compose_type(type, allow_nil?),
+        type: compose_type(type, constraints, allow_nil?),
         visibility: if(public?, do: :public, else: :private),
         name: Atom.to_string(name)
       }
@@ -224,9 +257,10 @@ defmodule AshDiagram.Data.Class do
 
   @spec build_calculations(calculations :: [Calculation.t()]) :: [DiagramImpl.Field.t()]
   defp build_calculations(calculations) do
-    for %Calculation{name: name, type: type, public?: public?} <- calculations do
+    for %Calculation{name: name, type: type, constraints: constraints, public?: public?} <-
+          calculations do
       %DiagramImpl.Field{
-        type: compose_type(type),
+        type: compose_type(type, constraints),
         visibility: if(public?, do: :public, else: :private),
         name: Atom.to_string(name)
       }
@@ -347,25 +381,38 @@ defmodule AshDiagram.Data.Class do
       type:
         {:generic, Atom.to_string(type),
          case type do
-           :action -> compose_type(action.returns, action.allow_nil?)
+           :action -> compose_type(action.returns, action.constraints, action.allow_nil?)
            _action -> self_name
          end},
       arguments:
         Enum.map(
           action.arguments,
-          &{Atom.to_string(&1.name), compose_type(&1.type, &1.allow_nil?)}
+          &{Atom.to_string(&1.name), compose_type(&1.type, &1.constraints, &1.allow_nil?)}
         )
     }
   end
 
-  @spec compose_type(type :: Ash.Type.t(), allow_nil? :: boolean()) :: iodata()
-  defp compose_type(type, allow_nil? \\ false)
-  defp compose_type(type, true), do: [??, compose_type(type)]
+  @spec compose_type(
+          type :: Ash.Type.t(),
+          constraints :: Keyword.t(),
+          allow_nil? :: boolean()
+        ) :: iodata()
+  defp compose_type(type, constraints \\ [], allow_nil? \\ false)
+  defp compose_type(type, constraints, true), do: [??, compose_type(type, constraints)]
 
-  defp compose_type({:array, inner_type}, false), do: [compose_type(inner_type), "[]"]
+  defp compose_type({:array, inner_type}, constraints, false),
+    do: [compose_type(inner_type, Keyword.get(constraints, :items, [])), "[]"]
 
-  defp compose_type(nil, false), do: "unknown"
-  defp compose_type(module, false), do: module |> Module.split() |> List.last()
+  defp compose_type(nil, _constraints, false), do: "unknown"
+
+  defp compose_type(Ash.Type.Struct, constraints, false) do
+    case Keyword.fetch(constraints, :instance_of) do
+      {:ok, module} -> compose_type(module)
+      :error -> "Struct"
+    end
+  end
+
+  defp compose_type(module, _constraints, false), do: module |> Module.split() |> List.last()
 
   @spec cardinality(relationship :: Relationships.relationship()) :: {iodata(), iodata()}
   defp cardinality(%Relationships.BelongsTo{allow_nil?: true}), do: {"0..1", "*"}

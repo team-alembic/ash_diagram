@@ -11,6 +11,8 @@ defmodule AshDiagram.Data.EntityRelationship do
   - **Attributes**: Resource attributes, calculations, and aggregates
   - **Relationships**: Ash relationships with cardinality derived from relationship types
   - **Embedded Resources**: Embedded resources used as attribute types, linked to their owner
+  - **Typed Structs**: `Ash.TypedStruct` modules used as attribute types, linked to their owner;
+    `:struct` types are named after their `instance_of` constraint
   - **Visibility**: Respects Ash `public?` settings for attributes and relationships
   - **Extensions**: Automatically includes diagrams from Ash extensions
 
@@ -139,17 +141,18 @@ defmodule AshDiagram.Data.EntityRelationship do
       end
 
     compositions = Types.compositions(resources, attribute_fun)
-    resources = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 1)))
+    modules = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 1)))
+    {typed_structs, resources} = Enum.split_with(modules, &Types.typed_struct?/1)
 
     entity_names =
       case options[:name] do
         :full ->
-          Map.new(resources, &{&1, inspect(&1)})
+          Map.new(modules, &{&1, inspect(&1)})
 
         :short ->
-          common_name_parts = common_prefix(resources)
+          common_name_parts = common_prefix(modules)
 
-          Map.new(resources, fn resource ->
+          Map.new(modules, fn resource ->
             shortened_name =
               resource
               |> Module.split()
@@ -163,17 +166,26 @@ defmodule AshDiagram.Data.EntityRelationship do
     entries =
       for resource <- Enum.sort(resources) do
         attributes =
-          for %Ash.Resource.Attribute{type: type, name: name, allow_nil?: allow_nil?} <-
+          for %Ash.Resource.Attribute{
+                type: type,
+                constraints: constraints,
+                name: name,
+                allow_nil?: allow_nil?
+              } <-
                 attribute_fun.(resource) do
             %DiagramImpl.Attribute{
-              type: compose_type(type, allow_nil?),
+              type: compose_type(type, constraints, allow_nil?),
               name: sanitize_property_name(name)
             }
           end
 
         calculations =
-          for %Ash.Resource.Calculation{name: name, type: type} <- calculation_fun.(resource) do
-            %DiagramImpl.Attribute{type: compose_type(type), name: sanitize_property_name(name)}
+          for %Ash.Resource.Calculation{name: name, type: type, constraints: constraints} <-
+                calculation_fun.(resource) do
+            %DiagramImpl.Attribute{
+              type: compose_type(type, constraints),
+              name: sanitize_property_name(name)
+            }
           end
 
         aggregates =
@@ -190,6 +202,8 @@ defmodule AshDiagram.Data.EntityRelationship do
           attributes: attributes ++ calculations ++ aggregates
         }
       end
+
+    typed_struct_entries = build_typed_struct_entries(typed_structs, entity_names)
 
     relationships =
       resources
@@ -237,8 +251,29 @@ defmodule AshDiagram.Data.EntityRelationship do
     extensions = Enum.uniq(resource_extensions ++ domain_extensions)
 
     Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
-      entries: entries ++ relationships ++ composition_relationships
+      entries: entries ++ typed_struct_entries ++ relationships ++ composition_relationships
     })
+  end
+
+  @spec build_typed_struct_entries(
+          typed_structs :: [module()],
+          entity_names :: %{module() => iodata()}
+        ) :: [DiagramImpl.Entity.t()]
+  defp build_typed_struct_entries(typed_structs, entity_names) do
+    for typed_struct <- Enum.sort(typed_structs) do
+      %DiagramImpl.Entity{
+        id: inspect(typed_struct),
+        label: entity_names[typed_struct],
+        attributes:
+          for %{name: name, type: type, constraints: constraints, allow_nil?: allow_nil?} <-
+                Ash.TypedStruct.Info.fields(typed_struct) do
+            %DiagramImpl.Attribute{
+              type: compose_type(type, constraints, allow_nil?),
+              name: sanitize_property_name(name)
+            }
+          end
+      }
+    end
   end
 
   @spec aggregate_type(resource :: Ash.Resource.t(), aggregate :: Aggregate.t()) ::
@@ -251,12 +286,27 @@ defmodule AshDiagram.Data.EntityRelationship do
     end
   end
 
-  @spec compose_type(type :: Ash.Type.t(), allow_nil? :: boolean()) :: iodata()
-  defp compose_type(type, allow_nil? \\ false)
-  defp compose_type(type, true), do: [compose_type(type), "？"]
-  defp compose_type({:array, inner_type}, false), do: [compose_type(inner_type), "[]"]
-  defp compose_type(nil, false), do: "unknown"
-  defp compose_type(module, false), do: module |> Module.split() |> List.last()
+  @spec compose_type(
+          type :: Ash.Type.t(),
+          constraints :: Keyword.t(),
+          allow_nil? :: boolean()
+        ) :: iodata()
+  defp compose_type(type, constraints \\ [], allow_nil? \\ false)
+  defp compose_type(type, constraints, true), do: [compose_type(type, constraints), "？"]
+
+  defp compose_type({:array, inner_type}, constraints, false),
+    do: [compose_type(inner_type, Keyword.get(constraints, :items, [])), "[]"]
+
+  defp compose_type(nil, _constraints, false), do: "unknown"
+
+  defp compose_type(Ash.Type.Struct, constraints, false) do
+    case Keyword.fetch(constraints, :instance_of) do
+      {:ok, module} -> compose_type(module)
+      :error -> "Struct"
+    end
+  end
+
+  defp compose_type(module, _constraints, false), do: module |> Module.split() |> List.last()
 
   @spec cardinality(relationship :: Relationships.relationship()) ::
           {DiagramImpl.Relationship.cardinality(), DiagramImpl.Relationship.cardinality()}
