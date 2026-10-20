@@ -6,11 +6,12 @@ defmodule AshDiagram.Data.Types do
   alias Ash.TypedStruct.Field
 
   @typedoc """
-  An owner module embedding a target module once (`:one`), once or `nil`
-  (`:optional`) or as a list (`:many`).
+  An owner module embedding a target module in a field, once (`:one`), once or
+  `nil` (`:optional`) or as a list (`:many`).
   """
   @type composition() ::
-          {owner :: module(), target :: module(), cardinality :: :one | :optional | :many}
+          {owner :: module(), field :: atom(), target :: module(),
+           cardinality :: :one | :optional | :many}
 
   @doc """
   Finds every embedded resource and typed struct reachable through the
@@ -42,13 +43,13 @@ defmodule AshDiagram.Data.Types do
       module
       |> fields(attribute_fun)
       |> Enum.flat_map(fn field ->
-        for {owner, target, cardinality} <- composition(module, field.type, field.constraints),
-            do: {owner, target, cardinality(cardinality, field.allow_nil?)}
+        for {target, cardinality} <- target(field.type, field.constraints),
+            do: {module, field.name, target, cardinality(cardinality, field.allow_nil?)}
       end)
 
     new_targets =
       compositions
-      |> Enum.map(&elem(&1, 1))
+      |> Enum.map(&elem(&1, 2))
       |> Enum.reject(&MapSet.member?(seen, &1))
       |> Enum.uniq()
 
@@ -72,24 +73,24 @@ defmodule AshDiagram.Data.Types do
   defp cardinality(:one, true), do: :optional
   defp cardinality(cardinality, _allow_nil?), do: cardinality
 
-  @spec composition(owner :: module(), type :: Ash.Type.t(), constraints :: Keyword.t()) ::
-          [{module(), module(), :one | :many}]
-  defp composition(owner, {:array, type}, constraints) do
-    for {^owner, target, _cardinality} <-
-          composition(owner, type, Keyword.get(constraints, :items, [])),
-        do: {owner, target, :many}
+  # The embedded resource or typed struct behind a type, if any
+  @spec target(type :: Ash.Type.t(), constraints :: Keyword.t()) ::
+          [{module(), :one | :many}]
+  defp target({:array, type}, constraints) do
+    for {target, _cardinality} <- target(type, Keyword.get(constraints, :items, [])),
+        do: {target, :many}
   end
 
-  defp composition(owner, Ash.Type.Struct, constraints) do
+  defp target(Ash.Type.Struct, constraints) do
     case Keyword.fetch(constraints, :instance_of) do
-      {:ok, module} -> composition(owner, module, [])
+      {:ok, module} -> target(module, [])
       :error -> []
     end
   end
 
-  defp composition(owner, type, _constraints) do
+  defp target(type, _constraints) do
     if (Info.resource?(type) and Info.embedded?(type)) or typed_struct?(type),
-      do: [{owner, type, :one}],
+      do: [{type, :one}],
       else: []
   end
 end

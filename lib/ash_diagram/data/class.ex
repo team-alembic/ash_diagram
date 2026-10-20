@@ -37,8 +37,10 @@ defmodule AshDiagram.Data.Class do
   Available options:
   - `{:name, :full | :short}` - How to display resource names. `:full` shows complete module names, `:short` shows shortened names with common prefixes removed
   - `{:show_private?, boolean()}` - Whether to include private attributes, calculations, aggregates, and relationships in the diagram
+  - `{:labels, [:compositions]}` - Which edges are labeled. `:compositions` labels the edge to an embedded resource or typed struct with the field holding it
   """
-  @type option() :: {:name, :full | :short} | {:show_private?, boolean()}
+  @type option() ::
+          {:name, :full | :short} | {:show_private?, boolean()} | {:labels, [:compositions]}
 
   @typedoc """
   List of configuration options for class diagram generation.
@@ -47,7 +49,8 @@ defmodule AshDiagram.Data.Class do
 
   @default_options [
     name: :short,
-    show_private?: false
+    show_private?: false,
+    labels: [:compositions]
   ]
 
   @doc """
@@ -141,7 +144,7 @@ defmodule AshDiagram.Data.Class do
       access_functions = build_access_functions(options[:show_private?])
 
     compositions = Types.compositions(resources, attribute_fun)
-    modules = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 1)))
+    modules = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 2)))
     {typed_structs, resources} = Enum.split_with(modules, &Types.typed_struct?/1)
     entity_names = build_entity_names(modules, options[:name])
 
@@ -150,7 +153,8 @@ defmodule AshDiagram.Data.Class do
         build_typed_struct_entries(typed_structs, entity_names)
 
     relationships =
-      build_relationships(resources, access_functions) ++ build_compositions(compositions)
+      build_relationships(resources, access_functions) ++
+        build_compositions(compositions, :compositions in options[:labels])
 
     extensions = collect_extensions(resources)
 
@@ -314,6 +318,8 @@ defmodule AshDiagram.Data.Class do
     |> Enum.uniq()
   end
 
+  # TODO: label relationships, too. A relationship and its reverse (belongs_to and
+  # has_many) are merged into one edge, which has room for one label only.
   @spec build_relationship(relationship :: Relationships.relationship()) ::
           DiagramImpl.Relationship.t()
   defp build_relationship(
@@ -333,15 +339,15 @@ defmodule AshDiagram.Data.Class do
     }
   end
 
-  @spec build_compositions(compositions :: [Types.composition()]) ::
+  @spec build_compositions(compositions :: [Types.composition()], label? :: boolean()) ::
           [DiagramImpl.Relationship.t()]
-  defp build_compositions(compositions) do
+  defp build_compositions(compositions, label?) do
     # A part held by several fields belongs to only one of them at a time
-    owner_counts = Enum.frequencies_by(compositions, &elem(&1, 1))
+    owner_counts = Enum.frequencies_by(compositions, &elem(&1, 2))
 
     compositions
     |> Enum.sort()
-    |> Enum.map(fn {owner, target, cardinality} ->
+    |> Enum.map(fn {owner, field, target, cardinality} ->
       %DiagramImpl.Relationship{
         left: %Pointer{
           class: inspect(owner),
@@ -352,7 +358,8 @@ defmodule AshDiagram.Data.Class do
           class: inspect(target),
           cardinality: composition_cardinality(cardinality)
         },
-        style: :solid
+        style: :solid,
+        label: if(label?, do: Atom.to_string(field))
       }
     end)
     |> Enum.uniq()
