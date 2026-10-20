@@ -7,6 +7,7 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
   alias AshDiagram.Aggregates.Author
   alias AshDiagram.Aggregates.Post
   alias AshDiagram.Data.EntityRelationship
+  alias AshDiagram.Embedded
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
 
@@ -94,6 +95,59 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                    UUID？ author_id
                  }
                  "AshDiagram.Aggregates.Author" }o--o| "AshDiagram.Aggregates.Post" : ""
+               """
+    end
+
+    test "accepts embedded resources" do
+      assert [Embedded.Post, Embedded.Comment]
+             |> EntityRelationship.for_resources()
+             |> AshDiagram.compose() ==
+               [Embedded.Domain] |> EntityRelationship.for_domains() |> AshDiagram.compose()
+    end
+
+    test "only follows private attributes to embedded resources with show_private?" do
+      public_only = [Embedded.Post] |> EntityRelationship.for_resources() |> AshDiagram.compose()
+
+      with_private =
+        [Embedded.Post]
+        |> EntityRelationship.for_resources(show_private?: true)
+        |> AshDiagram.compose()
+
+      refute IO.iodata_to_binary(public_only) =~ ~s("AshDiagram.Embedded.Note")
+      assert IO.iodata_to_binary(with_private) =~ ~s("AshDiagram.Embedded.Note")
+    end
+
+    # TODO: support union and maps
+    test "does not find embedded resources in union and map types" do
+      diagram = [Embedded.Container] |> EntityRelationship.for_resources() |> AshDiagram.compose()
+
+      refute IO.iodata_to_binary(diagram) =~ ~s("AshDiagram.Embedded.Author")
+    end
+  end
+
+  describe inspect(&EntityRelationship.for_domains/1) do
+    test "adds embedded resources as related entities" do
+      diagram = EntityRelationship.for_domains([Embedded.Domain])
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
+               """
+               erDiagram
+                 "AshDiagram.Embedded.Author"["Author"] {
+                   String？ name
+                 }
+                 "AshDiagram.Embedded.Comment"["Comment"] {
+                   String？ text
+                   Author？ author
+                 }
+                 "AshDiagram.Embedded.Post"["Post"] {
+                   UUID id
+                   String？ title
+                   Comment[]？ comments
+                   Author？ author
+                 }
+                 "AshDiagram.Embedded.Comment" ||--o| "AshDiagram.Embedded.Author" : ""
+                 "AshDiagram.Embedded.Post" ||--o| "AshDiagram.Embedded.Author" : ""
+                 "AshDiagram.Embedded.Post" ||--o{ "AshDiagram.Embedded.Comment" : ""
                """
     end
   end

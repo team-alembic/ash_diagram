@@ -5,6 +5,7 @@ defmodule AshDiagram.Data.ArchitectureTest do
   import AshDiagram.VisualAssertions
 
   alias AshDiagram.Data.Architecture
+  alias AshDiagram.Embedded
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
 
@@ -35,6 +36,13 @@ defmodule AshDiagram.Data.ArchitectureTest do
                  Rel("ash_diagram_flow_user", "mnesia", "uses", "Stores data")
                  Rel("ash_diagram_flow_org", "mnesia", "uses", "Stores data")
                """
+    end
+
+    test "accepts embedded resources" do
+      assert [Embedded.Post, Embedded.Comment]
+             |> Architecture.for_resources()
+             |> AshDiagram.compose() ==
+               [Embedded.Domain] |> Architecture.for_domains() |> AshDiagram.compose()
     end
 
     @tag :tmp_dir

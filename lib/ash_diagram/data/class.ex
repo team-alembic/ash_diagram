@@ -13,6 +13,7 @@ defmodule AshDiagram.Data.Class do
   - **Aggregates**: Ash aggregates with their types
   - **Actions**: Resource actions (create, read, update, delete, action) as methods
   - **Relationships**: Ash relationships with proper cardinality mapping
+  - **Embedded Resources**: Embedded resources used as attribute types, shown as compositions
   - **Visibility**: Respects Ash `public?` settings for attributes and relationships
   - **Extensions**: Automatically includes diagrams from Ash extensions
 
@@ -26,6 +27,7 @@ defmodule AshDiagram.Data.Class do
   alias AshDiagram.Class, as: DiagramImpl
   alias AshDiagram.Class.Relationship.Pointer
   alias AshDiagram.Data.Extension
+  alias AshDiagram.Data.Types
 
   @typedoc """
   Configuration option for class diagram generation.
@@ -132,11 +134,19 @@ defmodule AshDiagram.Data.Class do
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)
+
+    {attribute_fun, _calculation_fun, _aggregate_fun, _relationship_fun} =
+      access_functions = build_access_functions(options[:show_private?])
+
+    compositions = Types.compositions(resources, attribute_fun)
+    resources = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 1)))
     entity_names = build_entity_names(resources, options[:name])
-    access_functions = build_access_functions(options[:show_private?])
 
     entries = build_class_entries(resources, entity_names, access_functions)
-    relationships = build_relationships(resources, access_functions)
+
+    relationships =
+      build_relationships(resources, access_functions) ++ build_compositions(compositions)
+
     extensions = collect_extensions(resources)
 
     Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
@@ -289,6 +299,24 @@ defmodule AshDiagram.Data.Class do
     }
   end
 
+  @spec build_compositions(compositions :: [Types.composition()]) ::
+          [DiagramImpl.Relationship.t()]
+  defp build_compositions(compositions) do
+    compositions
+    |> Enum.sort()
+    |> Enum.map(fn {owner, target, cardinality} ->
+      %DiagramImpl.Relationship{
+        left: %Pointer{class: inspect(owner), cardinality: "1", type: :composition},
+        right: %Pointer{
+          class: inspect(target),
+          cardinality: if(cardinality == :many, do: "*", else: "1")
+        },
+        style: :solid
+      }
+    end)
+    |> Enum.uniq()
+  end
+
   @spec collect_extensions(resources :: [Ash.Resource.t()]) :: [module()]
   defp collect_extensions(resources) do
     resource_extensions = Enum.flat_map(resources, &Ash.Resource.Info.extensions/1)
@@ -296,6 +324,8 @@ defmodule AshDiagram.Data.Class do
     domain_extensions =
       resources
       |> Enum.map(&Ash.Resource.Info.domain/1)
+      # Embedded resources have no domain
+      |> Enum.reject(&is_nil/1)
       |> Enum.flat_map(&Info.extensions/1)
 
     Enum.uniq(resource_extensions ++ domain_extensions)

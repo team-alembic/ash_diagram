@@ -156,6 +156,8 @@ defmodule AshDiagram.Data.Architecture do
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)
+    # Embedded resources have no domain and no storage of their own
+    resources = Enum.reject(resources, &Ash.Resource.Info.embedded?/1)
 
     entity_names = build_entity_names(resources, options[:name])
     access_functions = build_access_functions(options[:show_private?])
