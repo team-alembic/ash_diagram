@@ -66,7 +66,7 @@ defmodule AshDiagram.Class.Relationship.Pointer do
       if pointer.cardinality do
         [" \"", pointer.cardinality, "\" "]
       else
-        []
+        " "
       end,
       "`",
       pointer.class,

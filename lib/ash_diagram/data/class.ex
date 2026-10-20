@@ -37,10 +37,12 @@ defmodule AshDiagram.Data.Class do
   Available options:
   - `{:name, :full | :short}` - How to display resource names. `:full` shows complete module names, `:short` shows shortened names with common prefixes removed
   - `{:show_private?, boolean()}` - Whether to include private attributes, calculations, aggregates, and relationships in the diagram
-  - `{:labels, [:compositions]}` - Which edges are labeled. `:compositions` labels the edge to an embedded resource or typed struct with the field holding it
+  - `{:labels, [:compositions | :dependencies]}` - Which edges are labeled. `:compositions` labels the edge to an embedded resource or typed struct with the field holding it, `:dependencies` labels the edge to an embedded resource or typed struct used by actions with the action names
   """
   @type option() ::
-          {:name, :full | :short} | {:show_private?, boolean()} | {:labels, [:compositions]}
+          {:name, :full | :short}
+          | {:show_private?, boolean()}
+          | {:labels, [:compositions | :dependencies]}
 
   @typedoc """
   List of configuration options for class diagram generation.
@@ -50,7 +52,7 @@ defmodule AshDiagram.Data.Class do
   @default_options [
     name: :short,
     show_private?: false,
-    labels: [:compositions]
+    labels: [:compositions, :dependencies]
   ]
 
   @doc """
@@ -143,8 +145,14 @@ defmodule AshDiagram.Data.Class do
     {attribute_fun, _calculation_fun, _aggregate_fun, _relationship_fun} =
       access_functions = build_access_functions(options[:show_private?])
 
-    compositions = Types.compositions(resources, attribute_fun)
-    modules = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 2)))
+    # shortcut: only actions of the given resources count, not of embedded resources found
+    # through attributes; upgrade when embedded resources with custom actions show up
+    dependencies = Types.dependencies(resources)
+    dependency_targets = Enum.map(dependencies, &elem(&1, 2))
+    seeds = Enum.uniq(resources ++ dependency_targets)
+    compositions = Types.compositions(seeds, attribute_fun)
+    modules = Enum.uniq(seeds ++ Enum.map(compositions, &elem(&1, 2)))
+
     {typed_structs, resources} = Enum.split_with(modules, &Types.typed_struct?/1)
     entity_names = build_entity_names(modules, options[:name])
 
@@ -154,7 +162,8 @@ defmodule AshDiagram.Data.Class do
 
     relationships =
       build_relationships(resources, access_functions) ++
-        build_compositions(compositions, :compositions in options[:labels])
+        build_compositions(compositions, :compositions in options[:labels]) ++
+        build_dependencies(dependencies, compositions, :dependencies in options[:labels])
 
     extensions = collect_extensions(resources)
 
@@ -363,6 +372,30 @@ defmodule AshDiagram.Data.Class do
       }
     end)
     |> Enum.uniq()
+  end
+
+  # One edge per resource and target, left out where a composition already connects both
+  @spec build_dependencies(
+          dependencies :: [Types.dependency()],
+          compositions :: [Types.composition()],
+          label? :: boolean()
+        ) :: [DiagramImpl.Relationship.t()]
+  defp build_dependencies(dependencies, compositions, label?) do
+    composed =
+      MapSet.new(compositions, fn {owner, _field, target, _cardinality} -> {owner, target} end)
+
+    dependencies
+    |> Enum.reject(fn {resource, _action, target} -> {resource, target} in composed end)
+    |> Enum.group_by(fn {resource, _action, target} -> {resource, target} end, &elem(&1, 1))
+    |> Enum.sort()
+    |> Enum.map(fn {{resource, target}, actions} ->
+      %DiagramImpl.Relationship{
+        left: %Pointer{class: inspect(resource)},
+        right: %Pointer{class: inspect(target), type: :dependency},
+        style: :dashed,
+        label: if(label?, do: actions |> Enum.sort() |> Enum.join(", "))
+      }
+    end)
   end
 
   @spec collect_extensions(resources :: [Ash.Resource.t()]) :: [module()]
