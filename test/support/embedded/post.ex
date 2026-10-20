@@ -6,6 +6,7 @@ defmodule AshDiagram.Embedded.Post do
 
   alias AshDiagram.Embedded.Author
   alias AshDiagram.Embedded.Meta
+  alias AshDiagram.Embedded.Summary
 
   attributes do
     uuid_primary_key :id
@@ -50,6 +51,22 @@ defmodule AshDiagram.Embedded.Post do
 
       argument :previous, {:array, :struct} do
         constraints items: [instance_of: Meta]
+      end
+
+      run fn _input, _context -> {:ok, nil} end
+    end
+
+    action :digest, Summary do
+      run fn _input, _context -> {:ok, nil} end
+    end
+
+    action :preview, {:array, Summary} do
+      run fn _input, _context -> {:ok, []} end
+    end
+
+    action :revise, :string do
+      argument :draft, Summary do
+        public?(false)
       end
 
       run fn _input, _context -> {:ok, nil} end

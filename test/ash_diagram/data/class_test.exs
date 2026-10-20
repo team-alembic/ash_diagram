@@ -146,6 +146,16 @@ defmodule AshDiagram.Data.ClassTest do
       assert [Embedded.Post, Embedded.Meta] |> Class.for_resources() |> AshDiagram.compose() ==
                [Embedded.Domain] |> Class.for_domains() |> AshDiagram.compose()
     end
+
+    test "follows private action arguments without show_private?, like the method signature" do
+      diagram =
+        [Embedded.Post] |> Class.for_resources() |> AshDiagram.compose() |> IO.iodata_to_binary()
+
+      assert diagram =~ "+revise(?Summary draft) : action~String~"
+
+      assert diagram =~
+               "`AshDiagram.Embedded.Post` ..> `AshDiagram.Embedded.Summary` : digest, preview, revise\n"
+    end
   end
 
   describe inspect(&Class.for_domains/1) do
@@ -180,6 +190,9 @@ defmodule AshDiagram.Data.ClassTest do
                    +?Stats stats
                    +?Struct raw
                    +summarize(?Meta[] previous) : action~Meta~
+                   +digest() : action~Summary~
+                   +preview() : action~Summary[]~
+                   +revise(?Summary draft) : action~String~
                  }
                  class `AshDiagram.Embedded.Meta`["Meta"] {
                    +Integer views
@@ -192,6 +205,10 @@ defmodule AshDiagram.Data.ClassTest do
                    +Integer likes
                    +?Reaction[] reactions
                  }
+                 class `AshDiagram.Embedded.Summary`["Summary"] {
+                   +String headline
+                   +?Integer words
+                 }
                  `AshDiagram.Embedded.Comment` "0..1" *-- "1" `AshDiagram.Embedded.Author` : author
                  `AshDiagram.Embedded.Post` "0..1" *-- "1" `AshDiagram.Embedded.Author` : author
                  `AshDiagram.Embedded.Post` "1" *-- "*" `AshDiagram.Embedded.Comment` : comments
@@ -199,6 +216,7 @@ defmodule AshDiagram.Data.ClassTest do
                  `AshDiagram.Embedded.Post` "1" *-- "0..1" `AshDiagram.Embedded.Meta` : meta
                  `AshDiagram.Embedded.Post` "1" *-- "0..1" `AshDiagram.Embedded.Stats` : stats
                  `AshDiagram.Embedded.Stats` "1" *-- "*" `AshDiagram.Embedded.Reaction` : reactions
+                 `AshDiagram.Embedded.Post` ..> `AshDiagram.Embedded.Summary` : digest, preview, revise
                """
     end
 
@@ -207,6 +225,14 @@ defmodule AshDiagram.Data.ClassTest do
 
       assert IO.iodata_to_binary(diagram) =~
                ~s(`AshDiagram.Embedded.Post` "1" *-- "*" `AshDiagram.Embedded.Comment`\n)
+    end
+
+    test "leaves out dependency labels without :dependencies in labels" do
+      diagram =
+        [Embedded.Domain] |> Class.for_domains(labels: [:compositions]) |> AshDiagram.compose()
+
+      assert IO.iodata_to_binary(diagram) =~
+               "`AshDiagram.Embedded.Post` ..> `AshDiagram.Embedded.Summary`\n"
     end
   end
 end

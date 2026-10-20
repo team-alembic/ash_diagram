@@ -177,6 +177,12 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                """
     end
 
+    test "leaves out typed structs only used in actions" do
+      diagram = [Embedded.Domain] |> EntityRelationship.for_domains() |> AshDiagram.compose()
+
+      refute IO.iodata_to_binary(diagram) =~ ~s("AshDiagram.Embedded.Summary")
+    end
+
     test "leaves out composition labels without :compositions in labels" do
       diagram =
         [Embedded.Domain] |> EntityRelationship.for_domains(labels: []) |> AshDiagram.compose()
