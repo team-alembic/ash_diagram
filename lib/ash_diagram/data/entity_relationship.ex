@@ -10,6 +10,9 @@ defmodule AshDiagram.Data.EntityRelationship do
   - **Resource Entities**: Ash resources displayed as ERD entities
   - **Attributes**: Resource attributes, calculations, and aggregates
   - **Relationships**: Ash relationships with cardinality derived from relationship types
+  - **Embedded Resources**: Embedded resources used as attribute types, linked to their owner
+  - **Typed Structs**: `Ash.TypedStruct` modules used as attribute types, linked to their owner;
+    `:struct` types are named after their `instance_of` constraint
   - **Visibility**: Respects Ash `public?` settings for attributes and relationships
   - **Extensions**: Automatically includes diagrams from Ash extensions
 
@@ -19,6 +22,7 @@ defmodule AshDiagram.Data.EntityRelationship do
   alias Ash.Resource.Aggregate
   alias Ash.Resource.Relationships
   alias AshDiagram.Data.Extension
+  alias AshDiagram.Data.Types
   alias AshDiagram.EntityRelationship, as: DiagramImpl
 
   @typedoc """
@@ -27,8 +31,10 @@ defmodule AshDiagram.Data.EntityRelationship do
   Available options:
   - `{:name, :full | :short}` - How to display resource names. `:full` shows complete module names, `:short` shows shortened names with common prefixes removed
   - `{:show_private?, boolean()}` - Whether to include private attributes, calculations, aggregates, and relationships in the diagram
+  - `{:labels, [:compositions]}` - Which relationships are labeled. `:compositions` labels the relationship to an embedded resource or typed struct with the field holding it
   """
-  @type option() :: {:name, :full | :short} | {:show_private?, boolean()}
+  @type option() ::
+          {:name, :full | :short} | {:show_private?, boolean()} | {:labels, [:compositions]}
 
   @typedoc """
   List of configuration options for entity-relationship diagram generation.
@@ -37,7 +43,8 @@ defmodule AshDiagram.Data.EntityRelationship do
 
   @default_options [
     name: :short,
-    show_private?: false
+    show_private?: false,
+    labels: [:compositions]
   ]
 
   @doc """
@@ -127,15 +134,28 @@ defmodule AshDiagram.Data.EntityRelationship do
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)
 
+    {attribute_fun, calculation_fun, aggregate_fun, relationship_fun} =
+      if options[:show_private?] do
+        {&Ash.Resource.Info.attributes/1, &Ash.Resource.Info.calculations/1,
+         &Ash.Resource.Info.aggregates/1, &Ash.Resource.Info.relationships/1}
+      else
+        {&Ash.Resource.Info.public_attributes/1, &Ash.Resource.Info.public_calculations/1,
+         &Ash.Resource.Info.public_aggregates/1, &Ash.Resource.Info.public_relationships/1}
+      end
+
+    compositions = Types.compositions(resources, attribute_fun)
+    modules = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 2)))
+    {typed_structs, resources} = Enum.split_with(modules, &Types.typed_struct?/1)
+
     entity_names =
       case options[:name] do
         :full ->
-          Map.new(resources, &{&1, inspect(&1)})
+          Map.new(modules, &{&1, inspect(&1)})
 
         :short ->
-          common_name_parts = common_prefix(resources)
+          common_name_parts = common_prefix(modules)
 
-          Map.new(resources, fn resource ->
+          Map.new(modules, fn resource ->
             shortened_name =
               resource
               |> Module.split()
@@ -146,29 +166,29 @@ defmodule AshDiagram.Data.EntityRelationship do
           end)
       end
 
-    {attribute_fun, calculation_fun, aggregate_fun, relationship_fun} =
-      if options[:show_private?] do
-        {&Ash.Resource.Info.attributes/1, &Ash.Resource.Info.calculations/1,
-         &Ash.Resource.Info.aggregates/1, &Ash.Resource.Info.relationships/1}
-      else
-        {&Ash.Resource.Info.public_attributes/1, &Ash.Resource.Info.public_calculations/1,
-         &Ash.Resource.Info.public_aggregates/1, &Ash.Resource.Info.public_relationships/1}
-      end
-
     entries =
       for resource <- Enum.sort(resources) do
         attributes =
-          for %Ash.Resource.Attribute{type: type, name: name, allow_nil?: allow_nil?} <-
+          for %Ash.Resource.Attribute{
+                type: type,
+                constraints: constraints,
+                name: name,
+                allow_nil?: allow_nil?
+              } <-
                 attribute_fun.(resource) do
             %DiagramImpl.Attribute{
-              type: compose_type(type, allow_nil?),
+              type: compose_type(type, constraints, allow_nil?),
               name: sanitize_property_name(name)
             }
           end
 
         calculations =
-          for %Ash.Resource.Calculation{name: name, type: type} <- calculation_fun.(resource) do
-            %DiagramImpl.Attribute{type: compose_type(type), name: sanitize_property_name(name)}
+          for %Ash.Resource.Calculation{name: name, type: type, constraints: constraints} <-
+                calculation_fun.(resource) do
+            %DiagramImpl.Attribute{
+              type: compose_type(type, constraints),
+              name: sanitize_property_name(name)
+            }
           end
 
         aggregates =
@@ -186,6 +206,8 @@ defmodule AshDiagram.Data.EntityRelationship do
         }
       end
 
+    typed_struct_entries = build_typed_struct_entries(typed_structs, entity_names)
+
     relationships =
       resources
       |> Enum.flat_map(relationship_fun)
@@ -193,6 +215,8 @@ defmodule AshDiagram.Data.EntityRelationship do
       |> Enum.map(fn %{source: source, destination: destination} = relationship ->
         {left_cardinality, right_cardinality} = cardinality(relationship)
 
+        # TODO: label relationships, too. A relationship and its reverse (belongs_to and
+        # has_many) are merged into one edge, which has room for one label only.
         %DiagramImpl.Relationship{
           left: {inspect(source), left_cardinality},
           right: {inspect(destination), right_cardinality},
@@ -203,18 +227,60 @@ defmodule AshDiagram.Data.EntityRelationship do
       |> Enum.map(&normalize_relationship/1)
       |> Enum.uniq()
 
+    composition_relationships =
+      build_compositions(compositions, :compositions in options[:labels])
+
     resource_extensions = Enum.flat_map(resources, &Ash.Resource.Info.extensions/1)
 
     domain_extensions =
       resources
       |> Enum.map(&Ash.Resource.Info.domain/1)
+      # Embedded resources have no domain
+      |> Enum.reject(&is_nil/1)
       |> Enum.flat_map(&Info.extensions/1)
 
     extensions = Enum.uniq(resource_extensions ++ domain_extensions)
 
     Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
-      entries: entries ++ relationships
+      entries: entries ++ typed_struct_entries ++ relationships ++ composition_relationships
     })
+  end
+
+  @spec build_typed_struct_entries(
+          typed_structs :: [module()],
+          entity_names :: %{module() => iodata()}
+        ) :: [DiagramImpl.Entity.t()]
+  defp build_typed_struct_entries(typed_structs, entity_names) do
+    for typed_struct <- Enum.sort(typed_structs) do
+      %DiagramImpl.Entity{
+        id: inspect(typed_struct),
+        label: entity_names[typed_struct],
+        attributes:
+          for %{name: name, type: type, constraints: constraints, allow_nil?: allow_nil?} <-
+                Ash.TypedStruct.Info.fields(typed_struct) do
+            %DiagramImpl.Attribute{
+              type: compose_type(type, constraints, allow_nil?),
+              name: sanitize_property_name(name)
+            }
+          end
+      }
+    end
+  end
+
+  @spec build_compositions(compositions :: [Types.composition()], label? :: boolean()) ::
+          [DiagramImpl.Relationship.t()]
+  defp build_compositions(compositions, label?) do
+    compositions
+    |> Enum.sort()
+    |> Enum.map(fn {owner, field, target, cardinality} ->
+      %DiagramImpl.Relationship{
+        left: {inspect(owner), :exactly_one},
+        right: {inspect(target), composition_cardinality(cardinality)},
+        identifying?: true,
+        label: if(label?, do: Atom.to_string(field), else: [])
+      }
+    end)
+    |> Enum.uniq()
   end
 
   @spec aggregate_type(resource :: Ash.Resource.t(), aggregate :: Aggregate.t()) ::
@@ -227,12 +293,27 @@ defmodule AshDiagram.Data.EntityRelationship do
     end
   end
 
-  @spec compose_type(type :: Ash.Type.t(), allow_nil? :: boolean()) :: iodata()
-  defp compose_type(type, allow_nil? \\ false)
-  defp compose_type(type, true), do: [compose_type(type), "？"]
-  defp compose_type({:array, inner_type}, false), do: [compose_type(inner_type), "[]"]
-  defp compose_type(nil, false), do: "unknown"
-  defp compose_type(module, false), do: module |> Module.split() |> List.last()
+  @spec compose_type(
+          type :: Ash.Type.t(),
+          constraints :: Keyword.t(),
+          allow_nil? :: boolean()
+        ) :: iodata()
+  defp compose_type(type, constraints \\ [], allow_nil? \\ false)
+  defp compose_type(type, constraints, true), do: [compose_type(type, constraints), "？"]
+
+  defp compose_type({:array, inner_type}, constraints, false),
+    do: [compose_type(inner_type, Keyword.get(constraints, :items, [])), "[]"]
+
+  defp compose_type(nil, _constraints, false), do: "unknown"
+
+  defp compose_type(Ash.Type.Struct, constraints, false) do
+    case Keyword.fetch(constraints, :instance_of) do
+      {:ok, module} -> compose_type(module)
+      :error -> "Struct"
+    end
+  end
+
+  defp compose_type(module, _constraints, false), do: module |> Module.split() |> List.last()
 
   @spec cardinality(relationship :: Relationships.relationship()) ::
           {DiagramImpl.Relationship.cardinality(), DiagramImpl.Relationship.cardinality()}
@@ -241,6 +322,12 @@ defmodule AshDiagram.Data.EntityRelationship do
   defp cardinality(%Relationships.HasMany{}), do: {:zero_or_more, :zero_or_one}
   defp cardinality(%Relationships.HasOne{}), do: {:exactly_one, :zero_or_one}
   defp cardinality(%Relationships.ManyToMany{}), do: {:zero_or_more, :zero_or_more}
+
+  @spec composition_cardinality(cardinality :: :one | :optional | :many) ::
+          DiagramImpl.Relationship.cardinality()
+  defp composition_cardinality(:one), do: :exactly_one
+  defp composition_cardinality(:optional), do: :zero_or_one
+  defp composition_cardinality(:many), do: :zero_or_more
 
   @spec common_prefix(parts :: [module()]) :: [String.t()]
   defp common_prefix(parts)

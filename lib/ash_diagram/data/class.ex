@@ -13,6 +13,9 @@ defmodule AshDiagram.Data.Class do
   - **Aggregates**: Ash aggregates with their types
   - **Actions**: Resource actions (create, read, update, delete, action) as methods
   - **Relationships**: Ash relationships with proper cardinality mapping
+  - **Embedded Resources**: Embedded resources used as attribute types, shown as compositions
+  - **Typed Structs**: `Ash.TypedStruct` modules used as attribute types, shown as compositions;
+    `:struct` types are named after their `instance_of` constraint
   - **Visibility**: Respects Ash `public?` settings for attributes and relationships
   - **Extensions**: Automatically includes diagrams from Ash extensions
 
@@ -26,6 +29,7 @@ defmodule AshDiagram.Data.Class do
   alias AshDiagram.Class, as: DiagramImpl
   alias AshDiagram.Class.Relationship.Pointer
   alias AshDiagram.Data.Extension
+  alias AshDiagram.Data.Types
 
   @typedoc """
   Configuration option for class diagram generation.
@@ -33,8 +37,12 @@ defmodule AshDiagram.Data.Class do
   Available options:
   - `{:name, :full | :short}` - How to display resource names. `:full` shows complete module names, `:short` shows shortened names with common prefixes removed
   - `{:show_private?, boolean()}` - Whether to include private attributes, calculations, aggregates, and relationships in the diagram
+  - `{:labels, [:compositions | :dependencies]}` - Which edges are labeled. `:compositions` labels the edge to an embedded resource or typed struct with the field holding it, `:dependencies` labels the edge to an embedded resource or typed struct used by actions with the action names
   """
-  @type option() :: {:name, :full | :short} | {:show_private?, boolean()}
+  @type option() ::
+          {:name, :full | :short}
+          | {:show_private?, boolean()}
+          | {:labels, [:compositions | :dependencies]}
 
   @typedoc """
   List of configuration options for class diagram generation.
@@ -43,7 +51,8 @@ defmodule AshDiagram.Data.Class do
 
   @default_options [
     name: :short,
-    show_private?: false
+    show_private?: false,
+    labels: [:compositions, :dependencies]
   ]
 
   @doc """
@@ -132,11 +141,30 @@ defmodule AshDiagram.Data.Class do
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)
-    entity_names = build_entity_names(resources, options[:name])
-    access_functions = build_access_functions(options[:show_private?])
 
-    entries = build_class_entries(resources, entity_names, access_functions)
-    relationships = build_relationships(resources, access_functions)
+    {attribute_fun, _calculation_fun, _aggregate_fun, _relationship_fun} =
+      access_functions = build_access_functions(options[:show_private?])
+
+    # shortcut: only actions of the given resources count, not of embedded resources found
+    # through attributes; upgrade when embedded resources with custom actions show up
+    dependencies = Types.dependencies(resources)
+    dependency_targets = Enum.map(dependencies, &elem(&1, 2))
+    seeds = Enum.uniq(resources ++ dependency_targets)
+    compositions = Types.compositions(seeds, attribute_fun)
+    modules = Enum.uniq(seeds ++ Enum.map(compositions, &elem(&1, 2)))
+
+    {typed_structs, resources} = Enum.split_with(modules, &Types.typed_struct?/1)
+    entity_names = build_entity_names(modules, options[:name])
+
+    entries =
+      build_class_entries(resources, entity_names, access_functions) ++
+        build_typed_struct_entries(typed_structs, entity_names)
+
+    relationships =
+      build_relationships(resources, access_functions) ++
+        build_compositions(compositions, :compositions in options[:labels]) ++
+        build_dependencies(dependencies, compositions, :dependencies in options[:labels])
+
     extensions = collect_extensions(resources)
 
     Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
@@ -201,11 +229,39 @@ defmodule AshDiagram.Data.Class do
     end
   end
 
+  @spec build_typed_struct_entries(
+          typed_structs :: [module()],
+          entity_names :: %{module() => iodata()}
+        ) :: [DiagramImpl.Class.t()]
+  defp build_typed_struct_entries(typed_structs, entity_names) do
+    for typed_struct <- Enum.sort(typed_structs) do
+      %DiagramImpl.Class{
+        id: inspect(typed_struct),
+        label: entity_names[typed_struct],
+        members:
+          for %{name: name, type: type, constraints: constraints, allow_nil?: allow_nil?} <-
+                Ash.TypedStruct.Info.fields(typed_struct) do
+            %DiagramImpl.Field{
+              type: compose_type(type, constraints, allow_nil?),
+              visibility: :public,
+              name: Atom.to_string(name)
+            }
+          end
+      }
+    end
+  end
+
   @spec build_attributes(attributes :: [Attribute.t()]) :: [DiagramImpl.Field.t()]
   defp build_attributes(attributes) do
-    for %Attribute{type: type, name: name, allow_nil?: allow_nil?, public?: public?} <- attributes do
+    for %Attribute{
+          type: type,
+          constraints: constraints,
+          name: name,
+          allow_nil?: allow_nil?,
+          public?: public?
+        } <- attributes do
       %DiagramImpl.Field{
-        type: compose_type(type, allow_nil?),
+        type: compose_type(type, constraints, allow_nil?),
         visibility: if(public?, do: :public, else: :private),
         name: Atom.to_string(name)
       }
@@ -214,9 +270,10 @@ defmodule AshDiagram.Data.Class do
 
   @spec build_calculations(calculations :: [Calculation.t()]) :: [DiagramImpl.Field.t()]
   defp build_calculations(calculations) do
-    for %Calculation{name: name, type: type, public?: public?} <- calculations do
+    for %Calculation{name: name, type: type, constraints: constraints, public?: public?} <-
+          calculations do
       %DiagramImpl.Field{
-        type: compose_type(type),
+        type: compose_type(type, constraints),
         visibility: if(public?, do: :public, else: :private),
         name: Atom.to_string(name)
       }
@@ -270,6 +327,8 @@ defmodule AshDiagram.Data.Class do
     |> Enum.uniq()
   end
 
+  # TODO: label relationships, too. A relationship and its reverse (belongs_to and
+  # has_many) are merged into one edge, which has room for one label only.
   @spec build_relationship(relationship :: Relationships.relationship()) ::
           DiagramImpl.Relationship.t()
   defp build_relationship(
@@ -289,6 +348,49 @@ defmodule AshDiagram.Data.Class do
     }
   end
 
+  @spec build_compositions(compositions :: [Types.composition()], label? :: boolean()) ::
+          [DiagramImpl.Relationship.t()]
+  defp build_compositions(compositions, label?) do
+    compositions
+    |> Enum.sort()
+    |> Enum.map(fn {owner, field, target, cardinality} ->
+      %DiagramImpl.Relationship{
+        left: %Pointer{class: inspect(owner), cardinality: "1", type: :composition},
+        right: %Pointer{
+          class: inspect(target),
+          cardinality: composition_cardinality(cardinality)
+        },
+        style: :solid,
+        label: if(label?, do: Atom.to_string(field))
+      }
+    end)
+    |> Enum.uniq()
+  end
+
+  # One edge per resource and target, left out where a composition already connects both
+  @spec build_dependencies(
+          dependencies :: [Types.dependency()],
+          compositions :: [Types.composition()],
+          label? :: boolean()
+        ) :: [DiagramImpl.Relationship.t()]
+  defp build_dependencies(dependencies, compositions, label?) do
+    composed =
+      MapSet.new(compositions, fn {owner, _field, target, _cardinality} -> {owner, target} end)
+
+    dependencies
+    |> Enum.reject(fn {resource, _action, target} -> {resource, target} in composed end)
+    |> Enum.group_by(fn {resource, _action, target} -> {resource, target} end, &elem(&1, 1))
+    |> Enum.sort()
+    |> Enum.map(fn {{resource, target}, actions} ->
+      %DiagramImpl.Relationship{
+        left: %Pointer{class: inspect(resource)},
+        right: %Pointer{class: inspect(target), type: :dependency},
+        style: :dashed,
+        label: if(label?, do: actions |> Enum.sort() |> Enum.join(", "))
+      }
+    end)
+  end
+
   @spec collect_extensions(resources :: [Ash.Resource.t()]) :: [module()]
   defp collect_extensions(resources) do
     resource_extensions = Enum.flat_map(resources, &Ash.Resource.Info.extensions/1)
@@ -296,6 +398,8 @@ defmodule AshDiagram.Data.Class do
     domain_extensions =
       resources
       |> Enum.map(&Ash.Resource.Info.domain/1)
+      # Embedded resources have no domain
+      |> Enum.reject(&is_nil/1)
       |> Enum.flat_map(&Info.extensions/1)
 
     Enum.uniq(resource_extensions ++ domain_extensions)
@@ -310,25 +414,38 @@ defmodule AshDiagram.Data.Class do
       type:
         {:generic, Atom.to_string(type),
          case type do
-           :action -> compose_type(action.returns, action.allow_nil?)
+           :action -> compose_type(action.returns, action.constraints, action.allow_nil?)
            _action -> self_name
          end},
       arguments:
         Enum.map(
           action.arguments,
-          &{Atom.to_string(&1.name), compose_type(&1.type, &1.allow_nil?)}
+          &{Atom.to_string(&1.name), compose_type(&1.type, &1.constraints, &1.allow_nil?)}
         )
     }
   end
 
-  @spec compose_type(type :: Ash.Type.t(), allow_nil? :: boolean()) :: iodata()
-  defp compose_type(type, allow_nil? \\ false)
-  defp compose_type(type, true), do: [??, compose_type(type)]
+  @spec compose_type(
+          type :: Ash.Type.t(),
+          constraints :: Keyword.t(),
+          allow_nil? :: boolean()
+        ) :: iodata()
+  defp compose_type(type, constraints \\ [], allow_nil? \\ false)
+  defp compose_type(type, constraints, true), do: [??, compose_type(type, constraints)]
 
-  defp compose_type({:array, inner_type}, false), do: [compose_type(inner_type), "[]"]
+  defp compose_type({:array, inner_type}, constraints, false),
+    do: [compose_type(inner_type, Keyword.get(constraints, :items, [])), "[]"]
 
-  defp compose_type(nil, false), do: "unknown"
-  defp compose_type(module, false), do: module |> Module.split() |> List.last()
+  defp compose_type(nil, _constraints, false), do: "unknown"
+
+  defp compose_type(Ash.Type.Struct, constraints, false) do
+    case Keyword.fetch(constraints, :instance_of) do
+      {:ok, module} -> compose_type(module)
+      :error -> "Struct"
+    end
+  end
+
+  defp compose_type(module, _constraints, false), do: module |> Module.split() |> List.last()
 
   @spec cardinality(relationship :: Relationships.relationship()) :: {iodata(), iodata()}
   defp cardinality(%Relationships.BelongsTo{allow_nil?: true}), do: {"0..1", "*"}
@@ -336,6 +453,11 @@ defmodule AshDiagram.Data.Class do
   defp cardinality(%Relationships.HasMany{}), do: {"*", "0..1"}
   defp cardinality(%Relationships.HasOne{}), do: {"1", "0..1"}
   defp cardinality(%Relationships.ManyToMany{}), do: {"*", "*"}
+
+  @spec composition_cardinality(cardinality :: :one | :optional | :many) :: iodata()
+  defp composition_cardinality(:one), do: "1"
+  defp composition_cardinality(:optional), do: "0..1"
+  defp composition_cardinality(:many), do: "*"
 
   @spec pointer_type(relationship :: Relationships.relationship()) ::
           {Pointer.type(), Pointer.type()}
