@@ -116,8 +116,9 @@ defmodule AshDiagram.Data.Architecture do
   """
   @spec for_domains(domains :: [Ash.Domain.t()], options :: options()) :: AshDiagram.t()
   def for_domains(domains, options \\ []),
-    do: domains |> Enum.flat_map(&Info.resources/1) |> for_resources(options)
+    do: domains |> Enum.flat_map(&Info.resources/1) |> Enum.uniq() |> build(domains, options)
 
+  # A resource with `domain: nil` can be in more than one of the domains.
   @doc """
   Generates an architecture diagram for the given Ash resources.
 
@@ -154,7 +155,14 @@ defmodule AshDiagram.Data.Architecture do
 
   """
   @spec for_resources(resources :: [Ash.Resource.t()], options :: options()) :: AshDiagram.t()
-  def for_resources(resources, options \\ []) do
+  def for_resources(resources, options \\ []), do: build(resources, [], options)
+
+  @spec build(
+          resources :: [Ash.Resource.t()],
+          domains :: [Ash.Domain.t()],
+          options :: options()
+        ) :: AshDiagram.t()
+  defp build(resources, domains, options) do
     options = Keyword.merge(@default_options, options)
 
     entity_names = build_entity_names(resources, options[:name])
@@ -163,7 +171,7 @@ defmodule AshDiagram.Data.Architecture do
     entries = build_context_entries(resources, entity_names, access_functions)
     title = build_title(resources, options)
 
-    extensions = collect_extensions(resources)
+    extensions = Extension.collect(resources, domains)
 
     Extension.construct_diagram(__MODULE__, extensions, %C4{
       type: :c4_context,
@@ -286,11 +294,11 @@ defmodule AshDiagram.Data.Architecture do
   @spec build_domain_boundaries(
           resources :: [Ash.Resource.t()],
           entity_names :: %{Ash.Resource.t() => iodata()}
-        ) :: [Boundary.t()]
+        ) :: [Boundary.t() | Element.t()]
   defp build_domain_boundaries(resources, entity_names) do
     domains = resources |> Enum.map(&Ash.Resource.Info.domain/1) |> Enum.uniq()
 
-    Enum.map(domains, fn domain ->
+    Enum.flat_map(domains, fn domain ->
       domain_resources = Enum.filter(resources, &(Ash.Resource.Info.domain(&1) == domain))
 
       resource_elements =
@@ -304,12 +312,22 @@ defmodule AshDiagram.Data.Architecture do
           }
         end)
 
-      %Boundary{
-        type: :system_boundary,
-        alias: module_alias(domain),
-        label: domain_label(domain),
-        entries: resource_elements
-      }
+      case domain do
+        # A resource with `domain: nil` has no domain of its own, so it goes
+        # directly in the application boundary.
+        nil ->
+          resource_elements
+
+        domain ->
+          [
+            %Boundary{
+              type: :system_boundary,
+              alias: module_alias(domain),
+              label: domain_label(domain),
+              entries: resource_elements
+            }
+          ]
+      end
     end)
   end
 
@@ -328,18 +346,6 @@ defmodule AshDiagram.Data.Architecture do
       label: relationship_label(relationship),
       description: relationship_description(relationship)
     }
-  end
-
-  @spec collect_extensions(resources :: [Ash.Resource.t()]) :: [module()]
-  defp collect_extensions(resources) do
-    resource_extensions = Enum.flat_map(resources, &Ash.Resource.Info.extensions/1)
-
-    domain_extensions =
-      resources
-      |> Enum.map(&Ash.Resource.Info.domain/1)
-      |> Enum.flat_map(&Info.extensions/1)
-
-    Enum.uniq(resource_extensions ++ domain_extensions)
   end
 
   @spec build_title(resources :: [Ash.Resource.t()], options :: options()) :: iodata()

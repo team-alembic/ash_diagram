@@ -62,14 +62,7 @@ defmodule AshDiagram.Data.PolicySimulation do
 
     diagram = create_simulation_diagram(resource, policies, options)
 
-    resource_extensions = Ash.Resource.Info.extensions(resource)
-
-    domain_extensions =
-      resource
-      |> Ash.Resource.Info.domain()
-      |> Ash.Domain.Info.extensions()
-
-    extensions = Enum.uniq(resource_extensions ++ domain_extensions)
+    extensions = Extension.collect([resource])
 
     Extension.construct_diagram(__MODULE__, extensions, diagram)
   end
