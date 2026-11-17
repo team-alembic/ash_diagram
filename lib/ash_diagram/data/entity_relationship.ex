@@ -214,8 +214,7 @@ defmodule AshDiagram.Data.EntityRelationship do
       |> Enum.map(fn {owner, target, cardinality} ->
         %DiagramImpl.Relationship{
           left: {inspect(owner), :exactly_one},
-          right:
-            {inspect(target), if(cardinality == :many, do: :zero_or_more, else: :zero_or_one)},
+          right: {inspect(target), composition_cardinality(cardinality)},
           identifying?: true,
           label: []
         }
@@ -262,6 +261,12 @@ defmodule AshDiagram.Data.EntityRelationship do
   defp cardinality(%Relationships.HasMany{}), do: {:zero_or_more, :zero_or_one}
   defp cardinality(%Relationships.HasOne{}), do: {:exactly_one, :zero_or_one}
   defp cardinality(%Relationships.ManyToMany{}), do: {:zero_or_more, :zero_or_more}
+
+  @spec composition_cardinality(cardinality :: :one | :optional | :many) ::
+          DiagramImpl.Relationship.cardinality()
+  defp composition_cardinality(:one), do: :exactly_one
+  defp composition_cardinality(:optional), do: :zero_or_one
+  defp composition_cardinality(:many), do: :zero_or_more
 
   @spec common_prefix(parts :: [module()]) :: [String.t()]
   defp common_prefix(parts)

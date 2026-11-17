@@ -309,7 +309,7 @@ defmodule AshDiagram.Data.Class do
         left: %Pointer{class: inspect(owner), cardinality: "1", type: :composition},
         right: %Pointer{
           class: inspect(target),
-          cardinality: if(cardinality == :many, do: "*", else: "1")
+          cardinality: composition_cardinality(cardinality)
         },
         style: :solid
       }
@@ -366,6 +366,11 @@ defmodule AshDiagram.Data.Class do
   defp cardinality(%Relationships.HasMany{}), do: {"*", "0..1"}
   defp cardinality(%Relationships.HasOne{}), do: {"1", "0..1"}
   defp cardinality(%Relationships.ManyToMany{}), do: {"*", "*"}
+
+  @spec composition_cardinality(cardinality :: :one | :optional | :many) :: iodata()
+  defp composition_cardinality(:one), do: "1"
+  defp composition_cardinality(:optional), do: "0..1"
+  defp composition_cardinality(:many), do: "*"
 
   @spec pointer_type(relationship :: Relationships.relationship()) ::
           {Pointer.type(), Pointer.type()}

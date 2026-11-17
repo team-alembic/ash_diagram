@@ -5,9 +5,11 @@ defmodule AshDiagram.Data.Types do
   alias Ash.Resource.Info
 
   @typedoc """
-  An owner module embedding a target module once (`:one`) or as a list (`:many`).
+  An owner module embedding a target module once (`:one`), once or `nil`
+  (`:optional`) or as a list (`:many`).
   """
-  @type composition() :: {owner :: module(), target :: module(), cardinality :: :one | :many}
+  @type composition() ::
+          {owner :: module(), target :: module(), cardinality :: :one | :optional | :many}
 
   @doc """
   Finds every embedded resource reachable through the attribute types of the
@@ -32,7 +34,10 @@ defmodule AshDiagram.Data.Types do
     compositions =
       module
       |> attribute_fun.()
-      |> Enum.flat_map(&composition(module, &1.type))
+      |> Enum.flat_map(fn attribute ->
+        for {owner, target, cardinality} <- composition(module, attribute.type),
+            do: {owner, target, cardinality(cardinality, attribute.allow_nil?)}
+      end)
 
     new_targets =
       compositions
@@ -44,7 +49,14 @@ defmodule AshDiagram.Data.Types do
       collect(rest ++ new_targets, attribute_fun, MapSet.union(seen, MapSet.new(new_targets)))
   end
 
-  @spec composition(owner :: module(), type :: Ash.Type.t()) :: [composition()]
+  # A list may be empty anyway, only a single value becomes optional
+  @spec cardinality(cardinality :: :one | :many, allow_nil? :: boolean()) ::
+          :one | :optional | :many
+  defp cardinality(:one, true), do: :optional
+  defp cardinality(cardinality, _allow_nil?), do: cardinality
+
+  @spec composition(owner :: module(), type :: Ash.Type.t()) ::
+          [{module(), module(), :one | :many}]
   defp composition(owner, {:array, type}) do
     for {^owner, target, _cardinality} <- composition(owner, type), do: {owner, target, :many}
   end
