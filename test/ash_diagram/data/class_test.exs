@@ -172,9 +172,9 @@ defmodule AshDiagram.Data.ClassTest do
                    +Author author
                    +?Author editor
                  }
-                 `AshDiagram.Embedded.Comment` "1" *-- "1" `AshDiagram.Embedded.Author`
-                 `AshDiagram.Embedded.Post` "1" *-- "1" `AshDiagram.Embedded.Author`
-                 `AshDiagram.Embedded.Post` "1" *-- "0..1" `AshDiagram.Embedded.Author`
+                 `AshDiagram.Embedded.Comment` "0..1" *-- "1" `AshDiagram.Embedded.Author`
+                 `AshDiagram.Embedded.Post` "0..1" *-- "1" `AshDiagram.Embedded.Author`
+                 `AshDiagram.Embedded.Post` "0..1" *-- "0..1" `AshDiagram.Embedded.Author`
                  `AshDiagram.Embedded.Post` "1" *-- "*" `AshDiagram.Embedded.Comment`
                """
     end

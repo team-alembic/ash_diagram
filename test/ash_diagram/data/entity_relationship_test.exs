@@ -146,9 +146,9 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                    Author author
                    Author？ editor
                  }
-                 "AshDiagram.Embedded.Comment" ||--|| "AshDiagram.Embedded.Author" : ""
-                 "AshDiagram.Embedded.Post" ||--|| "AshDiagram.Embedded.Author" : ""
-                 "AshDiagram.Embedded.Post" ||--o| "AshDiagram.Embedded.Author" : ""
+                 "AshDiagram.Embedded.Comment" |o--|| "AshDiagram.Embedded.Author" : ""
+                 "AshDiagram.Embedded.Post" |o--|| "AshDiagram.Embedded.Author" : ""
+                 "AshDiagram.Embedded.Post" |o--o| "AshDiagram.Embedded.Author" : ""
                  "AshDiagram.Embedded.Post" ||--o{ "AshDiagram.Embedded.Comment" : ""
                """
     end
