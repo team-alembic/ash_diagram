@@ -159,7 +159,7 @@ defmodule AshDiagram.Data.ClassTest do
                  }
                  class `AshDiagram.Embedded.Comment`["Comment"] {
                    +?String text
-                   +?Author author
+                   +Author author
                    +create() : create~Comment~
                    +read() : read~Comment~
                    +update() : update~Comment~
@@ -169,10 +169,12 @@ defmodule AshDiagram.Data.ClassTest do
                    +UUID id
                    +?String title
                    +?Comment[] comments
-                   +?Author author
+                   +Author author
+                   +?Author editor
                  }
                  `AshDiagram.Embedded.Comment` "1" *-- "1" `AshDiagram.Embedded.Author`
                  `AshDiagram.Embedded.Post` "1" *-- "1" `AshDiagram.Embedded.Author`
+                 `AshDiagram.Embedded.Post` "1" *-- "0..1" `AshDiagram.Embedded.Author`
                  `AshDiagram.Embedded.Post` "1" *-- "*" `AshDiagram.Embedded.Comment`
                """
     end

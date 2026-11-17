@@ -4,6 +4,8 @@ defmodule AshDiagram.Embedded.Post do
     domain: AshDiagram.Embedded.Domain,
     data_layer: Ash.DataLayer.Ets
 
+  alias AshDiagram.Embedded.Author
+
   attributes do
     uuid_primary_key :id
 
@@ -15,7 +17,13 @@ defmodule AshDiagram.Embedded.Post do
       public?(true)
     end
 
-    attribute :author, AshDiagram.Embedded.Author do
+    attribute :author, Author do
+      allow_nil?(false)
+      public?(true)
+    end
+
+    # Who edited the post last, nil while never edited
+    attribute :editor, Author do
       public?(true)
     end
 

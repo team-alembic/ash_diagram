@@ -137,15 +137,17 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                  }
                  "AshDiagram.Embedded.Comment"["Comment"] {
                    String？ text
-                   Author？ author
+                   Author author
                  }
                  "AshDiagram.Embedded.Post"["Post"] {
                    UUID id
                    String？ title
                    Comment[]？ comments
-                   Author？ author
+                   Author author
+                   Author？ editor
                  }
-                 "AshDiagram.Embedded.Comment" ||--o| "AshDiagram.Embedded.Author" : ""
+                 "AshDiagram.Embedded.Comment" ||--|| "AshDiagram.Embedded.Author" : ""
+                 "AshDiagram.Embedded.Post" ||--|| "AshDiagram.Embedded.Author" : ""
                  "AshDiagram.Embedded.Post" ||--o| "AshDiagram.Embedded.Author" : ""
                  "AshDiagram.Embedded.Post" ||--o{ "AshDiagram.Embedded.Comment" : ""
                """

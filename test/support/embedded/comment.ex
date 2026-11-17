@@ -8,6 +8,7 @@ defmodule AshDiagram.Embedded.Comment do
     end
 
     attribute :author, AshDiagram.Embedded.Author do
+      allow_nil?(false)
       public?(true)
     end
   end
