@@ -208,12 +208,16 @@ defmodule AshDiagram.Data.EntityRelationship do
       |> Enum.map(&normalize_relationship/1)
       |> Enum.uniq()
 
+    # A part held by several fields belongs to only one of them at a time
+    owner_counts = Enum.frequencies_by(compositions, &elem(&1, 1))
+
     composition_relationships =
       compositions
       |> Enum.sort()
       |> Enum.map(fn {owner, target, cardinality} ->
         %DiagramImpl.Relationship{
-          left: {inspect(owner), :exactly_one},
+          left:
+            {inspect(owner), if(owner_counts[target] == 1, do: :exactly_one, else: :zero_or_one)},
           right: {inspect(target), composition_cardinality(cardinality)},
           identifying?: true,
           label: []

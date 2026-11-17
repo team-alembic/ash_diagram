@@ -302,11 +302,18 @@ defmodule AshDiagram.Data.Class do
   @spec build_compositions(compositions :: [Types.composition()]) ::
           [DiagramImpl.Relationship.t()]
   defp build_compositions(compositions) do
+    # A part held by several fields belongs to only one of them at a time
+    owner_counts = Enum.frequencies_by(compositions, &elem(&1, 1))
+
     compositions
     |> Enum.sort()
     |> Enum.map(fn {owner, target, cardinality} ->
       %DiagramImpl.Relationship{
-        left: %Pointer{class: inspect(owner), cardinality: "1", type: :composition},
+        left: %Pointer{
+          class: inspect(owner),
+          cardinality: if(owner_counts[target] == 1, do: "1", else: "0..1"),
+          type: :composition
+        },
         right: %Pointer{
           class: inspect(target),
           cardinality: composition_cardinality(cardinality)
