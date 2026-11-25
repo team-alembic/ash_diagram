@@ -72,5 +72,50 @@ defmodule AshDiagram.ClassTest do
 
       assert AshDiagram.render(diagram, format: :svg)
     end
+
+    test "composes namespaces" do
+      diagram = %Class{
+        entries: [
+          %Class.Namespace{
+            id: "Shop",
+            entries: [
+              %Class.Class{
+                id: "CUSTOMER",
+                members: [%Class.Field{name: "id", visibility: :private, type: "UUID"}]
+              },
+              %Class.Class{id: "ORDER"}
+            ]
+          },
+          %Class.Relationship{
+            left: %Pointer{class: "CUSTOMER", type: :association, cardinality: "1"},
+            right: %Pointer{class: "ORDER", type: :association, cardinality: "0..*"},
+            style: :solid
+          }
+        ]
+      }
+
+      assert diagram |> Class.compose() |> IO.iodata_to_binary() ==
+               """
+               classDiagram
+                 namespace Shop {
+                   class `CUSTOMER` {
+                     -UUID id
+                   }
+                   class `ORDER`
+                 }
+                 `CUSTOMER` "1" <--> "0..*" `ORDER`
+               """
+    end
+
+    @tag :external
+    test "renders namespaces" do
+      diagram = %Class{
+        entries: [
+          %Class.Namespace{id: "Shop", entries: [%Class.Class{id: "CUSTOMER"}]}
+        ]
+      }
+
+      assert AshDiagram.render(diagram, format: :svg)
+    end
   end
 end

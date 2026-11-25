@@ -7,6 +7,7 @@ defmodule AshDiagram.Class do
   @behaviour AshDiagram
 
   alias AshDiagram.Class.Class
+  alias AshDiagram.Class.Namespace
   alias AshDiagram.Class.Relationship
 
   @directions %{
@@ -25,8 +26,8 @@ defmodule AshDiagram.Class do
           title: iodata() | nil,
           config: config() | nil,
           direction: direction() | nil,
-          # TODO: Do Namespace, Interaction, Note, Style, ClassDef, CssClass
-          entries: [Class.t() | Relationship.t()]
+          # TODO: Do Interaction, Note, Style, ClassDef, CssClass
+          entries: [Class.t() | Namespace.t() | Relationship.t()]
         }
   @enforce_keys [:entries]
   defstruct [:entries, title: nil, config: nil, direction: nil]

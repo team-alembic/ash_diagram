@@ -2,8 +2,40 @@ defmodule AshDiagram.UtilTest do
   use ExUnit.Case, async: true
 
   alias AshDiagram.Util
+  alias MyApp.Billing.Invoice
+  alias MyApp.Blog.Admin
+  alias MyApp.Blog.Post
 
   doctest Util
+
+  describe inspect(&Util.module_names/2) do
+    test "uses the complete module name with :full" do
+      assert Util.module_names([Post], :full) == %{Post => "MyApp.Blog.Post"}
+    end
+
+    test "drops the shared namespace with :short" do
+      assert Util.module_names([Post, Invoice], :short) == %{
+               Post => "Blog.Post",
+               Invoice => "Billing.Invoice"
+             }
+    end
+
+    test "keeps the last part of a single module with :short" do
+      assert Util.module_names([Post], :short) == %{Post => "Post"}
+    end
+
+    test "keeps the name of a module that prefixes another module with :short" do
+      assert Util.module_names([MyApp.Blog, Admin], :short) == %{
+               MyApp.Blog => "Blog",
+               Admin => "Blog.Admin"
+             }
+    end
+
+    test "handles no modules" do
+      assert Util.module_names([], :short) == %{}
+      assert Util.module_names([], :full) == %{}
+    end
+  end
 
   describe inspect(&Util.sanitize_non_escapable_string/2) do
     test "replaces individual special characters" do
