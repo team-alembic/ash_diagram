@@ -9,6 +9,7 @@ defmodule AshDiagram.Data.ClassTest do
   alias AshDiagram.Data.Class
   alias AshDiagram.Flow.Org
   alias AshDiagram.Flow.User
+  alias AshDiagram.Namespaces
 
   doctest Class
 
@@ -94,6 +95,64 @@ defmodule AshDiagram.Data.ClassTest do
                    +report(String reason) : action~?Boolean~
                  }
                  `AshDiagram.Flow.Org` "*" o--* "0..1" `AshDiagram.Flow.User`
+               """
+    end
+
+    test "groups classes into one namespace per domain" do
+      diagram =
+        Class.for_resources(
+          [Namespaces.Blog.Author, Namespaces.Blog.Post, Namespaces.Billing.Invoice],
+          namespace: :domain
+        )
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
+               """
+               classDiagram
+                 namespace Billing {
+                   class `AshDiagram.Namespaces.Billing.Invoice`["Billing.Invoice"] {
+                     +UUID id
+                     +?Decimal amount
+                     +UUID author_id
+                   }
+                 }
+                 namespace Blog {
+                   class `AshDiagram.Namespaces.Blog.Author`["Blog.Author"] {
+                     +UUID id
+                     +?String name
+                   }
+                   class `AshDiagram.Namespaces.Blog.Post`["Blog.Post"] {
+                     +UUID id
+                     +?String title
+                     +?UUID author_id
+                   }
+                 }
+                 `AshDiagram.Namespaces.Billing.Invoice` "1" *--o "*" `AshDiagram.Namespaces.Blog.Author`
+                 `AshDiagram.Namespaces.Blog.Author` "*" o--* "0..1" `AshDiagram.Namespaces.Blog.Post`
+               """
+    end
+
+    test "keeps a namespace name for a domain that prefixes another domain" do
+      diagram =
+        Class.for_resources(
+          [Namespaces.Blog.Author, Namespaces.Blog.Admin.Moderator],
+          namespace: :domain
+        )
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() ==
+               """
+               classDiagram
+                 namespace Blog {
+                   class `AshDiagram.Namespaces.Blog.Author`["Author"] {
+                     +UUID id
+                     +?String name
+                   }
+                 }
+                 namespace Blog.Admin {
+                   class `AshDiagram.Namespaces.Blog.Admin.Moderator`["Admin.Moderator"] {
+                     +UUID id
+                   }
+                 }
+                 `AshDiagram.Namespaces.Blog.Author` "*" o--* "0..1" `AshDiagram.Namespaces.Blog.Post`
                """
     end
 
