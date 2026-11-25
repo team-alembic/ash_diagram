@@ -10,6 +10,7 @@ defmodule AshDiagram.Data.EntityRelationship do
   - **Resource Entities**: Ash resources displayed as ERD entities
   - **Attributes**: Resource attributes, calculations, and aggregates
   - **Relationships**: Ash relationships with cardinality derived from relationship types
+  - **Embedded Resources**: Embedded resources used as attribute types, linked to their owner
   - **Visibility**: Respects Ash `public?` settings for attributes and relationships
   - **Extensions**: Automatically includes diagrams from Ash extensions
 
@@ -19,6 +20,7 @@ defmodule AshDiagram.Data.EntityRelationship do
   alias Ash.Resource.Aggregate
   alias Ash.Resource.Relationships
   alias AshDiagram.Data.Extension
+  alias AshDiagram.Data.Types
   alias AshDiagram.EntityRelationship, as: DiagramImpl
 
   @typedoc """
@@ -127,6 +129,18 @@ defmodule AshDiagram.Data.EntityRelationship do
   def for_resources(resources, options \\ []) do
     options = Keyword.merge(@default_options, options)
 
+    {attribute_fun, calculation_fun, aggregate_fun, relationship_fun} =
+      if options[:show_private?] do
+        {&Ash.Resource.Info.attributes/1, &Ash.Resource.Info.calculations/1,
+         &Ash.Resource.Info.aggregates/1, &Ash.Resource.Info.relationships/1}
+      else
+        {&Ash.Resource.Info.public_attributes/1, &Ash.Resource.Info.public_calculations/1,
+         &Ash.Resource.Info.public_aggregates/1, &Ash.Resource.Info.public_relationships/1}
+      end
+
+    compositions = Types.compositions(resources, attribute_fun)
+    resources = Enum.uniq(resources ++ Enum.map(compositions, &elem(&1, 1)))
+
     entity_names =
       case options[:name] do
         :full ->
@@ -144,15 +158,6 @@ defmodule AshDiagram.Data.EntityRelationship do
 
             {resource, shortened_name}
           end)
-      end
-
-    {attribute_fun, calculation_fun, aggregate_fun, relationship_fun} =
-      if options[:show_private?] do
-        {&Ash.Resource.Info.attributes/1, &Ash.Resource.Info.calculations/1,
-         &Ash.Resource.Info.aggregates/1, &Ash.Resource.Info.relationships/1}
-      else
-        {&Ash.Resource.Info.public_attributes/1, &Ash.Resource.Info.public_calculations/1,
-         &Ash.Resource.Info.public_aggregates/1, &Ash.Resource.Info.public_relationships/1}
       end
 
     entries =
@@ -203,17 +208,36 @@ defmodule AshDiagram.Data.EntityRelationship do
       |> Enum.map(&normalize_relationship/1)
       |> Enum.uniq()
 
+    # A part held by several fields belongs to only one of them at a time
+    owner_counts = Enum.frequencies_by(compositions, &elem(&1, 1))
+
+    composition_relationships =
+      compositions
+      |> Enum.sort()
+      |> Enum.map(fn {owner, target, cardinality} ->
+        %DiagramImpl.Relationship{
+          left:
+            {inspect(owner), if(owner_counts[target] == 1, do: :exactly_one, else: :zero_or_one)},
+          right: {inspect(target), composition_cardinality(cardinality)},
+          identifying?: true,
+          label: []
+        }
+      end)
+      |> Enum.uniq()
+
     resource_extensions = Enum.flat_map(resources, &Ash.Resource.Info.extensions/1)
 
     domain_extensions =
       resources
       |> Enum.map(&Ash.Resource.Info.domain/1)
+      # Embedded resources have no domain
+      |> Enum.reject(&is_nil/1)
       |> Enum.flat_map(&Info.extensions/1)
 
     extensions = Enum.uniq(resource_extensions ++ domain_extensions)
 
     Extension.construct_diagram(__MODULE__, extensions, %DiagramImpl{
-      entries: entries ++ relationships
+      entries: entries ++ relationships ++ composition_relationships
     })
   end
 
@@ -241,6 +265,12 @@ defmodule AshDiagram.Data.EntityRelationship do
   defp cardinality(%Relationships.HasMany{}), do: {:zero_or_more, :zero_or_one}
   defp cardinality(%Relationships.HasOne{}), do: {:exactly_one, :zero_or_one}
   defp cardinality(%Relationships.ManyToMany{}), do: {:zero_or_more, :zero_or_more}
+
+  @spec composition_cardinality(cardinality :: :one | :optional | :many) ::
+          DiagramImpl.Relationship.cardinality()
+  defp composition_cardinality(:one), do: :exactly_one
+  defp composition_cardinality(:optional), do: :zero_or_one
+  defp composition_cardinality(:many), do: :zero_or_more
 
   @spec common_prefix(parts :: [module()]) :: [String.t()]
   defp common_prefix(parts)
