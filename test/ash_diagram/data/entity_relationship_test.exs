@@ -7,12 +7,21 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
   alias AshDiagram.Aggregates.Author
   alias AshDiagram.Aggregates.Post
   alias AshDiagram.Data.EntityRelationship
+  alias AshDiagram.Flow.NoDomainResource
   alias AshDiagram.Flow.Org
+  alias AshDiagram.Flow.SharedDomainA
+  alias AshDiagram.Flow.SharedDomainB
   alias AshDiagram.Flow.User
 
   doctest EntityRelationship
 
   describe inspect(&EntityRelationship.for_resources/1) do
+    test "creates diagram from a resource without a domain" do
+      diagram = EntityRelationship.for_resources([NoDomainResource])
+
+      assert diagram |> AshDiagram.compose() |> IO.iodata_to_binary() =~ "AshDiagram.Flow.NoDomainResource"
+    end
+
     test "creates diagram from resources" do
       diagram = EntityRelationship.for_resources([User, Org])
 
@@ -95,6 +104,21 @@ defmodule AshDiagram.Data.EntityRelationshipTest do
                  }
                  "AshDiagram.Aggregates.Author" }o--o| "AshDiagram.Aggregates.Post" : ""
                """
+    end
+  end
+
+  describe inspect(&EntityRelationship.for_domains/1) do
+    test "draws a resource that two domains list only once, with the extensions of both domains" do
+      composed =
+        [SharedDomainA, SharedDomainB]
+        |> EntityRelationship.for_domains()
+        |> AshDiagram.compose()
+        |> IO.iodata_to_binary()
+
+      assert composed |> String.split(~s|"AshDiagram.Flow.NoDomainResource"[|) |> length() == 2
+      refute composed =~ ~s|[""]|
+      # AshDiagram.DummyExtension, from SharedDomainA, adds this entry.
+      assert composed =~ "♡"
     end
   end
 end

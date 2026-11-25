@@ -24,3 +24,10 @@ ash_diagram-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Files that the mix task tests write next to the test sources. The tests
+# remove them, but an interrupted run can leave them.
+/test/support/flow/*-mermaid-*.*
+/test/support/flow/*-policy-flowchart.*
+/test/support/flow/*-test-flow.*
+/test/mix/*-test-flow.*
